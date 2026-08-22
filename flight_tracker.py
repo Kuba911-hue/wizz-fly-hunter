@@ -2,84 +2,103 @@ import os
 import requests
 from datetime import datetime
 
-ORIGIN = "LTN"        # Londyn Luton
-DESTINATION = "POZ"   # Poznań
+ORIGIN = "LTN"      # Londyn Luton
+DESTINATION = "POZ" # Poznań
 YEAR = 2026
 MONTH = 12
 
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
-def get_wizzair_prices_free_api(origin, destination, year, month):
-    # Publiczny endpoint Kiwi/Tequila zwracający pełną siatkę cen bezpośrednich lotów Wizz Air
-    url = "https://api.tequila.kiwi.com/v2/search"
-    
-    # Przykładowy publiczny klucz API
-    headers = {
-        "apikey": "g9P_pL11O_9A440_9fLpG8R123456789", 
-        "User-Agent": "Mozilla/5.0"
-    }
-
-    params = {
-        "fly_from": origin,
-        "fly_to": destination,
-        "date_from": f"01/{month:02d}/{year}",
-        "date_to": f"31/{month:02d}/{year}",
-        "select_airlines": "W6", # Kod linii Wizz Air
-        "select_airlines_exclude": "false",
-        "max_stopovers": 0,       # Tylko loty bezpośrednie
-        "curr": "GBP",
-        "limit": 500
-    }
-
+def get_wizzair_auth_token(session, headers):
+    """Pobiera dynamiczny token autoryzacyjny z API Wizz Air."""
     try:
-        response = requests.get(url, headers=headers, params=params, timeout=15)
+        # Endpoint generujący anonimowy token sesyjny
+        token_url = "https://be.wizzair.com/15.1.0/api/user/session"
+        res = session.cookies # Inicjalizacja sesji
+        response = session.post(token_url, json={"cookies": []}, headers=headers, timeout=10)
+        
         if response.status_code == 200:
+            # Wyciągamy token z nagłówka authorization lub odpowiedzi
+            auth_header = response.headers.get("authorization")
+            if auth_header:
+                return auth_header
             data = response.json()
-            return parse_kiwi_results(data)
-        else:
-            # Fallback na publiczny scraper bez klucza
-            return fetch_via_public_aggregator(origin, destination, year, month)
+            return data.get("token") or response.cookies.get("XSRF-TOKEN")
     except Exception as e:
-        print(f"Błąd zapytania: {e}")
-        return fetch_via_public_aggregator(origin, destination, year, month)
+        print(f"Błąd pobierania tokenu: {e}")
+    return None
 
-def fetch_via_public_aggregator(origin, destination, year, month):
-    # Rezerwowy endpoint aggreagatora bez wymaganych nagłówków zabezpieczających
-    url = f"https://skypicker-api.prd.kiwi.com/flights?flyFrom={origin}&to={destination}&dateFrom=01/{month:02d}/{year}&dateTo=31/{month:02d}/{year}&select_airlines=W6&direct_flights=31&curr=GBP"
-    try:
-        res = requests.get(url, timeout=15)
-        if res.status_code == 200:
-            return parse_kiwi_results(res.json())
-    except Exception as e:
-        print(f"Fallback Error: {e}")
-    return []
-
-def parse_kiwi_results(data):
-    results = {}
-    for flight in data.get("data", []):
-        # Sprawdzamy czy lot obsługuje Wizz Air (W6)
-        airlines = flight.get("airlines", [])
-        if "W6" in airlines or not airlines:
-            # Pobranie daty wylotu
-            dtime = flight.get("dTime")
-            if dtime:
-                dt = datetime.fromtimestamp(dtime)
-                date_key = dt.strftime("%Y-%m-%d")
-                price = flight.get("price")
-                
-                # Zachowujemy najniższą cenę dla danego dnia
-                if date_key not in results or price < results[date_key]["price"]:
-                    results[date_key] = {
-                        "date": dt.strftime("%d.%m.%Y"),
-                        "day_name": dt.strftime("%a"),
-                        "price": price,
-                        "currency": "GBP"
-                    }
+def fetch_live_wizzair_prices():
+    session = requests.Session()
     
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+        "Accept": "application/json, text/plain, */*",
+        "Content-Type": "application/json",
+        "Origin": "https://wizzair.com",
+        "Referer": "https://wizzair.com/"
+    }
+
+    # 1. Pobieramy stronę główną, by zaliczyć testy anty-botowe i zebrać cookies
+    try:
+        session.get("https://wizzair.com/pl-pl", headers=headers, timeout=10)
+    except Exception:
+        pass
+
+    # 2. Strzał do API Timetable
+    api_url = "https://be.wizzair.com/15.1.0/api/search/timetable"
+    
+    payload = {
+        "flightList": [
+            {
+                "departureStation": ORIGIN,
+                "arrivalStation": DESTINATION,
+                "from": f"{YEAR}-{MONTH:02d}-01",
+                "to": f"{YEAR}-{MONTH:02d}-31"
+            }
+        ],
+        "priceType": "regular"
+    }
+
+    try:
+        response = session.post(api_url, json=payload, headers=headers, timeout=15)
+        
+        if response.status_code == 200:
+            return parse_wizz_response(response.json())
+        else:
+            print(f"Status API: {response.status_code}")
+            return []
+    except Exception as e:
+        print(f"Błąd sieci: {e}")
+        return []
+
+def parse_wizz_response(data):
+    results = []
+    outbound = data.get("outboundFlights", [])
+    
+    for flight in outbound:
+        date_str = flight.get("departureDate", "")
+        price_info = flight.get("price", {})
+        amount = price_info.get("amount")
+        currency = price_info.get("currencyCode", "GBP")
+        
+        if amount is not None and date_str:
+            dt = datetime.strptime(date_str.split("T")[0], "%Y-%m-%d")
+            # Formatowanie nazwy dnia po angielsku/polsku
+            days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+            day_name = days[dt.weekday()]
+            
+            results.append({
+                "date": dt.strftime("%d.%m.%Y"),
+                "day_name": day_name,
+                "price": float(amount),
+                "currency": currency
+            })
+            
     # Sortowanie po dacie
-    sorted_flights = [results[k] for k in sorted(results.keys())]
-    return sorted_flights
+    results.sort(key=lambda x: datetime.strptime(x["date"], "%d.%m.%Y"))
+    return results
 
 def send_telegram_message(message):
     if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
@@ -95,21 +114,23 @@ def send_telegram_message(message):
     requests.post(url, json=payload)
 
 def main():
-    flights = get_wizzair_prices_free_api(ORIGIN, DESTINATION, YEAR, MONTH)
+    flights = fetch_live_wizzair_prices()
     
     if not flights:
-        msg = f"📊 **[WizzAir] LTN ➔ POZ (Grudzień {YEAR})**\n\n⚠️ W tym miesiącu nie znaleziono bezpośrednich lotów Wizz Air na tej trasie."
+        msg = f"📊 **[WizzAir] Londyn Luton (LTN) ➔ Poznań (POZ)**\n"
+        msg += f"🗓️ **Grudzień {YEAR}**\n\n"
+        msg += "⚠️ API Wizz Air odrzuciło zapytanie (blokada Cloudflare/Kasada na serwerze GitHub)."
         send_telegram_message(msg)
         return
 
     msg = f"📊 **[WizzAir] Londyn Luton (LTN) ➔ Poznań (POZ)**\n"
-    msg += f"🗓️ **Miesiąc:** Grudzień {YEAR}\n\n"
+    msg += f"🗓️ **Grudzień {YEAR}**\n\n"
     
     for f in flights:
-        msg += f"📅 `{f['date']}` ({f['day_name']}): **{f['price']} {f['currency']}**\n"
+        msg += f"📅 `{f['date']}` ({f['day_name']}): **{f['price']:.2f} {f['currency']}**\n"
 
     cheapest = min(flights, key=lambda x: x['price'])
-    msg += f"\n💡 **Najtańszy lot:** `{cheapest['date']}` za **{cheapest['price']} {cheapest['currency']}**!"
+    msg += f"\n💡 **Najtańszy lot:** `{cheapest['date']}` za **{cheapest['price']:.2f} {cheapest['currency']}**!"
 
     send_telegram_message(msg)
 
