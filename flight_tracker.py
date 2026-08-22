@@ -10,45 +10,43 @@ MONTH = 12
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
-def capture_clean_calendar():
-    screenshot_path = "calendar_clean.png"
+def capture_calendar():
+    screenshot_path = "calendar.png"
     
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
-        # Ustawienie okna na rozdzielczość, w której kalendarz wypełnia cały ekran
         context = browser.new_context(
-            viewport={"width": 1400, "height": 900},
+            viewport={"width": 1600, "height": 1100},
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
         )
         page = context.new_page()
 
         try:
             url = f"https://www.wizzair.com/en-gb/flights/fare-finder/{ORIGIN}/{DESTINATION}/0/0/0/1/0/0/{YEAR}-{MONTH:02d}-01/{YEAR}-{MONTH:02d}-01?flexible=anytime&duration=1_week"
-            page.goto(url, wait_until="networkidle", timeout=60000)
-            page.wait_for_timeout(3000)
+            
+            page.goto(url, wait_until="domcontentloaded", timeout=60000)
+            
+            # Czekamy aż baner prywatności się pojawi
+            page.wait_for_selector("#onetrust-accept-btn-handler", timeout=10000)
+            
+            # Kliknięcie "Accept all"
+            page.click("#onetrust-accept-btn-handler")
+            
+            # Odczekanie chwili, aż baner zniknie z ekranu
+            page.wait_for_timeout(2000)
 
-            # Usuwamy baner cookies oraz nakładkę zaciemniającą tło bezpośrednio z HTML
-            page.evaluate("""() => {
-                const selectors = [
-                    '#onetrust-banner-sdk',
-                    '.onetrust-pc-dark-filter',
-                    '#onetrust-consent-sdk'
-                ];
-                selectors.forEach(sel => {
-                    const el = document.querySelector(sel);
-                    if (el) el.remove();
-                });
-            }""")
-
-            page.wait_for_timeout(1000)
-
-            # Robimy zrzut widocznego obszaru
+            # Zrzut czystego ekranu
             page.screenshot(path=screenshot_path)
             return screenshot_path
 
         except Exception as e:
-            print(f"Błąd Playwright: {e}")
-            return None
+            print(f"Błąd podczas klikania Accept All: {e}")
+            # Jeśli baner się nie pojawił lub kliknięcie zawiodło, i tak robimy zrzut
+            try:
+                page.screenshot(path=screenshot_path)
+                return screenshot_path
+            except Exception:
+                return None
         finally:
             browser.close()
 
@@ -68,7 +66,7 @@ def send_telegram_photo(photo_path, caption):
         requests.post(url, data=payload, files=files)
 
 def main():
-    photo = capture_clean_calendar()
+    photo = capture_calendar()
     
     if photo and os.path.exists(photo):
         caption = f"✈️ **WizzAir Fare Finder: LTN ➔ POZ**\n🗓️ **Grudzień {YEAR}**"
@@ -78,7 +76,7 @@ def main():
         url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
         payload = {
             "chat_id": TELEGRAM_CHAT_ID,
-            "text": "⚠️ Nie udało się wygenerować zrzutu ekranu kalendarza."
+            "text": "⚠️ Nie udało się pobrać zrzutu ekranu z serwera."
         }
         requests.post(url, json=payload)
 
