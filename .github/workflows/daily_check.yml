@@ -1,4 +1,4 @@
-name: ✈️ Daily WizzAir Price Check (OCR)
+name: ✈️ Daily WizzAir Price Check (Stealth)
 
 on:
   schedule:
@@ -12,11 +12,6 @@ jobs:
       - name: Checkout kodu
         uses: actions/checkout@v4
 
-      - name: Instalacja Tesseract OCR
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y tesseract-ocr libtesseract-dev
-
       - name: Konfiguracja Pythona
         uses: actions/setup-python@v5
         with:
@@ -25,8 +20,8 @@ jobs:
       - name: Instalacja bibliotek Python
         run: pip install -r requirements.txt
 
-      - name: Instalacja silnika Chromium
-        run: python -m playwright install chromium --with-deps
+      - name: Instalacja silnika Firefox
+        run: python -m playwright install firefox --with-deps
 
       - name: Uruchomienie bota
         env:
