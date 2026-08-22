@@ -14,37 +14,54 @@ def capture_calendar():
     screenshot_path = "calendar.png"
     
     with sync_playwright() as p:
-        # Odpalamy Chromium z wyłączonymi flagami zdradzającymi automatyzację
+        # Odpalanie z wyłączonymi flagami botów
         browser = p.chromium.launch(
             headless=True,
-            args=["--disable-blink-features=AutomationControlled"]
+            args=[
+                "--disable-blink-features=AutomationControlled",
+                "--no-sandbox",
+                "--disable-setuid-sandbox"
+            ]
         )
+        
         context = browser.new_context(
-            viewport={"width": 1600, "height": 1100},
+            viewport={"width": 1400, "height": 900},
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"
         )
+
+        # Wstrzykiwanie wskaźnika ukrywającego Selenium/Playwright przed skryptami antybotowymi WizzAira
+        context.add_init_script("""
+            Object.defineProperty(navigator, 'webdriver', {
+                get: () => undefined
+            });
+        """)
+
         page = context.new_page()
 
         try:
             url = f"https://www.wizzair.com/en-gb/flights/fare-finder/{ORIGIN}/{DESTINATION}/0/0/0/1/0/0/{YEAR}-{MONTH:02d}-01/{YEAR}-{MONTH:02d}-01?flexible=anytime&duration=1_week"
             
-            page.goto(url, wait_until="domcontentloaded", timeout=60000)
-            page.wait_for_timeout(5000)
+            page.goto(url, wait_until="networkidle", timeout=60000)
 
-            # 1. Fizyczne kliknięcie myszką w pozycję przycisku "Accept all" na ekranie (X: 875, Y: 670)
-            page.mouse.click(875, 670)
-            page.wait_for_timeout(1500)
+            # 1. Usuwamy baner OneTrust i jego tło bezpośrednio z drzewa DOM
+            page.evaluate("""() => {
+                const elements = document.querySelectorAll('#onetrust-consent-sdk, .onetrust-pc-dark-filter, #onetrust-banner-sdk');
+                elements.forEach(el => el.remove());
+                document.body.style.overflow = 'auto';
+            }""")
 
-            # 2. Zapasowe kliknięcie w przycisk "Deny all" (X: 655, Y: 670) gdyby Accept nie chwycił
-            page.mouse.click(655, 670)
-            page.wait_for_timeout(1000)
+            # 2. Czekamy aż znikną kółka ładowania i pojawią się ceny (max 15 sek)
+            try:
+                page.wait_for_selector(".fare-finder__calendar__price", timeout=15000)
+            except Exception:
+                page.wait_for_timeout(5000)
 
-            # Zrzut ekranu po zamknięciu okna
+            # Zrzut ekranu po doczytaniu cen i wyczyszczeniu baneru
             page.screenshot(path=screenshot_path)
             return screenshot_path
 
         except Exception as e:
-            print(f"Błąd podczas wykonywania zrzutu: {e}")
+            print(f"Błąd podczas ładowania: {e}")
             try:
                 page.screenshot(path=screenshot_path)
                 return screenshot_path
