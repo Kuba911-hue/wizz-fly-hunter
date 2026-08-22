@@ -1,0 +1,28 @@
+name: ✈️ Daily WizzAir Price Check (LTN -> POZ)
+
+on:
+  schedule:
+    # Uruchamianie 3 razy dziennie (06:00, 12:00, 18:00 UTC = 08:00, 14:00, 20:00 czasu w PL)
+    - cron: '0 6,12,18 * * *'
+  workflow_dispatch:
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout kodu
+        uses: actions/checkout@v3
+
+      - name: Konfiguracja Pythona
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Instalacja bibliotek
+        run: pip install -r requirements.txt
+
+      - name: Uruchomienie bota
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python flight_tracker.py
