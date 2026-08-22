@@ -1,71 +1,48 @@
 import os
 import requests
-from datetime import datetime
+from playwright.sync_api import sync_playwright
 
-ORIGIN = "LTN"        # London Luton
-DESTINATION = "POZ"   # Poznań
-YEAR = 2026
-MONTH = 12
+ORIGIN = "LTN"
+DESTINATION = "POZ"
+MONTH = "2026-12"
 
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
-def get_monthly_prices():
-    # Pobieramy cały zakres dat dla wskazanego miesiąca
-    date_from = f"01/{MONTH:02d}/{YEAR}"
-    date_to = f"31/{MONTH:02d}/{YEAR}"
+def capture_azair():
+    screenshot_path = "azair_calendar.png"
+    # Szukamy lotów bezpośrednich z Luton do Poznania na cały grudzień 2026
+    url = f"https://www.azair.eu/azfind.php?src={ORIGIN}&dst={DESTINATION}&depmonth={MONTH}&minnights=1&maxnights=14&direct=1&currency=GBP"
 
-    url = "https://api.skypicker.com/flights"
-    params = {
-        "fly_from": ORIGIN,
-        "fly_to": DESTINATION,
-        "date_from": date_from,
-        "date_to": date_to,
-        "curr": "GBP",
-        "partner": "picky",
-        "direct_flights": 1,
-        "one_per_date": 1,  # Wyciąga dokładnie 1 najtańszy lot z każdego dnia
-        "sort": "date"
-    }
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context(viewport={"width": 1280, "height": 900})
+        page = context.new_page()
 
-    try:
-        response = requests.get(url, params=params, timeout=20)
-        data = response.json()
-        return data.get("data", [])
-    except Exception as e:
-        print(f"Błąd Kiwi API: {e}")
-        return None
+        try:
+            page.goto(url, wait_until="domcontentloaded", timeout=30000)
+            page.wait_for_timeout(2000)
+            page.screenshot(path=screenshot_path)
+            return screenshot_path
+        except Exception as e:
+            print(f"Błąd Azair: {e}")
+            return None
+        finally:
+            browser.close()
 
-def send_telegram_message(text):
+def send_telegram_photo(photo_path, caption):
     if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
-        print("Brak tokenu Telegram!")
         return
-
-    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-    payload = {
-        "chat_id": TELEGRAM_CHAT_ID,
-        "text": text,
-        "parse_mode": "Markdown"
-    }
-    requests.post(url, json=payload)
+    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendPhoto"
+    with open(photo_path, "rb") as photo:
+        payload = {"chat_id": TELEGRAM_CHAT_ID, "caption": caption, "parse_mode": "Markdown"}
+        requests.post(url, data=payload, files={"photo": photo})
 
 def main():
-    flights = get_monthly_prices()
-
-    if flights:
-        msg = f"✈️ **Ceny lotów: {ORIGIN} ➔ {DESTINATION}**\n🗓️ **Grudzień {YEAR} (Kiwi.com)**\n\n"
-        
-        for flight in flights:
-            # Formatowanie daty z timestampu UNIX
-            date_str = datetime.fromtimestamp(flight["dTime"]).strftime("%d.%m (%a)")
-            price = flight["price"]
-            airline = flight["airlines"][0] if flight.get("airlines") else "Flight"
-            
-            msg += f"• `{date_str}` ➔ **{price} GBP** ({airline})\n"
-
-        send_telegram_message(msg)
-    else:
-        send_telegram_message("⚠️ Nie udało się pobrać danych o cenach z Kiwi.com.")
+    photo = capture_azair()
+    if photo and os.path.exists(photo):
+        send_telegram_photo(photo, f"✈️ **Ceny i Rozkład LTN ➔ POZ**\n🗓️ **Grudzień 2026 (Azair)**")
+        os.remove(photo)
 
 if __name__ == "__main__":
     main()
