@@ -1,6 +1,7 @@
 import os
+import requests
+import cloudscraper
 from datetime import datetime
-from curl_cffi import requests
 
 ORIGIN = "LTN"      # Londyn Luton
 DESTINATION = "POZ" # Poznań
@@ -11,17 +12,23 @@ TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
 def fetch_live_wizzair_prices():
-    api_url = "https://be.wizzair.com/15.1.0/api/search/timetable"
+    # Cloudscraper do omijania zabezpieczeń Cloudflare
+    scraper = cloudscraper.create_scraper(
+        browser={
+            'browser': 'chrome',
+            'platform': 'windows',
+            'mobile': False
+        }
+    )
     
-    # Używamy impersonate="chrome120" - udaje prawdziwą przeglądarkę na poziomie TLS
-    session = requests.Session(impersonate="chrome120")
+    api_url = "https://be.wizzair.com/15.1.0/api/search/timetable"
     
     headers = {
         "Accept": "application/json, text/plain, */*",
         "Content-Type": "application/json",
         "Origin": "https://wizzair.com",
         "Referer": "https://wizzair.com/pl-pl/flights/fare-finder/LTN/POZ",
-        "Accept-Language": "pl-PL,pl;q=0.9,en-US;q=0.8,en;q=0.7",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
     }
 
     payload = {
@@ -37,11 +44,10 @@ def fetch_live_wizzair_prices():
     }
 
     try:
-        # Najpierw "odwiedzamy" stronę główną, żeby zebrać ciasteczka sesyjne
-        session.get("https://wizzair.com/pl-pl", headers=headers, timeout=15)
+        # Inicjalizacja sesji ze stroną główną
+        scraper.get("https://wizzair.com/pl-pl", headers=headers, timeout=15)
         
-        # Właściwy strzał po ceny
-        response = session.post(api_url, json=payload, headers=headers, timeout=20)
+        response = scraper.post(api_url, json=payload, headers=headers, timeout=20)
         
         if response.status_code == 200:
             return parse_wizz_response(response.json())
@@ -49,7 +55,7 @@ def fetch_live_wizzair_prices():
             print(f"Status Błędu: {response.status_code}")
             return []
     except Exception as e:
-        print(f"Wyjątek: {e}")
+        print(f"Błąd sieci: {e}")
         return []
 
 def parse_wizz_response(data):
@@ -88,14 +94,13 @@ def send_telegram_message(message):
         "text": message,
         "parse_mode": "Markdown"
     }
-    # Używamy zwykłego zapytania do Telegrama
     requests.post(url, json=payload)
 
 def main():
     flights = fetch_live_wizzair_prices()
     
     if not flights:
-        msg = f"📊 **[WizzAir] LTN ➔ POZ (Grudzień {YEAR})**\n\n⚠️ Nie udało się pobrać cen na żywo (WizzAir zblokował połączenie)."
+        msg = f"📊 **[WizzAir] LTN ➔ POZ (Grudzień {YEAR})**\n\n⚠️ WizzAir zblokował połączenie ze względu na weryfikację anty-botową."
         send_telegram_message(msg)
         return
 
