@@ -1,4 +1,4 @@
-name: ✈️ Daily WizzAir Price Check (Stealth)
+name: ✈️ Daily Flight Price Check (Kiwi API)
 
 on:
   schedule:
@@ -19,9 +19,6 @@ jobs:
 
       - name: Instalacja bibliotek Python
         run: pip install -r requirements.txt
-
-      - name: Instalacja silnika Firefox
-        run: python -m playwright install firefox --with-deps
 
       - name: Uruchomienie bota
         env:
