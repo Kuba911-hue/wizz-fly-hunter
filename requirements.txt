@@ -1,2 +1,2 @@
-cloudscraper
+google-search-results
 requests
