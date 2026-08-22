@@ -1,6 +1,6 @@
 import os
-import requests
 from datetime import datetime
+from curl_cffi import requests
 
 ORIGIN = "LTN"      # Londyn Luton
 DESTINATION = "POZ" # Poznań
@@ -10,45 +10,20 @@ MONTH = 12
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
-def get_wizzair_auth_token(session, headers):
-    """Pobiera dynamiczny token autoryzacyjny z API Wizz Air."""
-    try:
-        # Endpoint generujący anonimowy token sesyjny
-        token_url = "https://be.wizzair.com/15.1.0/api/user/session"
-        res = session.cookies # Inicjalizacja sesji
-        response = session.post(token_url, json={"cookies": []}, headers=headers, timeout=10)
-        
-        if response.status_code == 200:
-            # Wyciągamy token z nagłówka authorization lub odpowiedzi
-            auth_header = response.headers.get("authorization")
-            if auth_header:
-                return auth_header
-            data = response.json()
-            return data.get("token") or response.cookies.get("XSRF-TOKEN")
-    except Exception as e:
-        print(f"Błąd pobierania tokenu: {e}")
-    return None
-
 def fetch_live_wizzair_prices():
-    session = requests.Session()
+    api_url = "https://be.wizzair.com/15.1.0/api/search/timetable"
+    
+    # Używamy impersonate="chrome120" - udaje prawdziwą przeglądarkę na poziomie TLS
+    session = requests.Session(impersonate="chrome120")
     
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
         "Accept": "application/json, text/plain, */*",
         "Content-Type": "application/json",
         "Origin": "https://wizzair.com",
-        "Referer": "https://wizzair.com/"
+        "Referer": "https://wizzair.com/pl-pl/flights/fare-finder/LTN/POZ",
+        "Accept-Language": "pl-PL,pl;q=0.9,en-US;q=0.8,en;q=0.7",
     }
 
-    # 1. Pobieramy stronę główną, by zaliczyć testy anty-botowe i zebrać cookies
-    try:
-        session.get("https://wizzair.com/pl-pl", headers=headers, timeout=10)
-    except Exception:
-        pass
-
-    # 2. Strzał do API Timetable
-    api_url = "https://be.wizzair.com/15.1.0/api/search/timetable"
-    
     payload = {
         "flightList": [
             {
@@ -62,15 +37,19 @@ def fetch_live_wizzair_prices():
     }
 
     try:
-        response = session.post(api_url, json=payload, headers=headers, timeout=15)
+        # Najpierw "odwiedzamy" stronę główną, żeby zebrać ciasteczka sesyjne
+        session.get("https://wizzair.com/pl-pl", headers=headers, timeout=15)
+        
+        # Właściwy strzał po ceny
+        response = session.post(api_url, json=payload, headers=headers, timeout=20)
         
         if response.status_code == 200:
             return parse_wizz_response(response.json())
         else:
-            print(f"Status API: {response.status_code}")
+            print(f"Status Błędu: {response.status_code}")
             return []
     except Exception as e:
-        print(f"Błąd sieci: {e}")
+        print(f"Wyjątek: {e}")
         return []
 
 def parse_wizz_response(data):
@@ -85,7 +64,6 @@ def parse_wizz_response(data):
         
         if amount is not None and date_str:
             dt = datetime.strptime(date_str.split("T")[0], "%Y-%m-%d")
-            # Formatowanie nazwy dnia po angielsku/polsku
             days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
             day_name = days[dt.weekday()]
             
@@ -96,7 +74,6 @@ def parse_wizz_response(data):
                 "currency": currency
             })
             
-    # Sortowanie po dacie
     results.sort(key=lambda x: datetime.strptime(x["date"], "%d.%m.%Y"))
     return results
 
@@ -111,15 +88,14 @@ def send_telegram_message(message):
         "text": message,
         "parse_mode": "Markdown"
     }
+    # Używamy zwykłego zapytania do Telegrama
     requests.post(url, json=payload)
 
 def main():
     flights = fetch_live_wizzair_prices()
     
     if not flights:
-        msg = f"📊 **[WizzAir] Londyn Luton (LTN) ➔ Poznań (POZ)**\n"
-        msg += f"🗓️ **Grudzień {YEAR}**\n\n"
-        msg += "⚠️ API Wizz Air odrzuciło zapytanie (blokada Cloudflare/Kasada na serwerze GitHub)."
+        msg = f"📊 **[WizzAir] LTN ➔ POZ (Grudzień {YEAR})**\n\n⚠️ Nie udało się pobrać cen na żywo (WizzAir zblokował połączenie)."
         send_telegram_message(msg)
         return
 
