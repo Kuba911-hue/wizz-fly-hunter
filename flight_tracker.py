@@ -1,108 +1,71 @@
 import os
 import requests
-from playwright.sync_api import sync_playwright
+from datetime import datetime
 
-ORIGIN = "london-luton"
-DESTINATION = "poznan"
+ORIGIN = "LTN"        # London Luton
+DESTINATION = "POZ"   # Poznań
 YEAR = 2026
 MONTH = 12
 
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
-def capture_calendar():
-    screenshot_path = "calendar.png"
-    
-    with sync_playwright() as p:
-        browser = p.firefox.launch(headless=True)
-        
-        context = browser.new_context(
-            viewport={"width": 1500, "height": 1000},
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:128.0) Gecko/20100101 Firefox/128.0",
-            locale="en-GB",
-            timezone_id="Europe/London"
-        )
-        
-        page = context.new_page()
+def get_monthly_prices():
+    # Pobieramy cały zakres dat dla wskazanego miesiąca
+    date_from = f"01/{MONTH:02d}/{YEAR}"
+    date_to = f"31/{MONTH:02d}/{YEAR}"
 
-        page.add_init_script("""
-            Object.defineProperty(navigator, 'webdriver', {
-                get: () => undefined
-            });
-        """)
+    url = "https://api.skypicker.com/flights"
+    params = {
+        "fly_from": ORIGIN,
+        "fly_to": DESTINATION,
+        "date_from": date_from,
+        "date_to": date_to,
+        "curr": "GBP",
+        "partner": "picky",
+        "direct_flights": 1,
+        "one_per_date": 1,  # Wyciąga dokładnie 1 najtańszy lot z każdego dnia
+        "sort": "date"
+    }
 
-        try:
-            url = f"https://www.wizzair.com/en-gb/flights/fare-finder/{ORIGIN}/{DESTINATION}/0/0/0/1/0/0/{YEAR}-{MONTH:02d}-01/{YEAR}-{MONTH:02d}-01?flexible=anytime&duration=1_week"
-            
-            page.goto(url, wait_until="domcontentloaded", timeout=60000)
-            
-            # Czekamy na załadowanie cen w kalendarzu
-            try:
-                page.wait_for_selector(".fare-finder__calendar__price", timeout=20000)
-            except Exception:
-                page.wait_for_timeout(8000)
+    try:
+        response = requests.get(url, params=params, timeout=20)
+        data = response.json()
+        return data.get("data", [])
+    except Exception as e:
+        print(f"Błąd Kiwi API: {e}")
+        return None
 
-            # Wstrzykujemy regułę CSS, która ukrywa WSZYSTKIE banery prywatności oraz zdejmuje filtrowanie/przyciemnienie ze strony
-            page.add_style_tag(content="""
-                #onetrust-consent-sdk,
-                #onetrust-banner-sdk,
-                .onetrust-pc-dark-filter,
-                div[id*="onetrust"] {
-                    display: none !important;
-                    visibility: hidden !important;
-                    opacity: 0 !important;
-                }
-                body, html {
-                    overflow: auto !important;
-                    filter: none !important;
-                }
-            """)
-
-            page.wait_for_timeout(1000)
-
-            # Zrzut ekranu
-            page.screenshot(path=screenshot_path)
-            return screenshot_path
-
-        except Exception as e:
-            print(f"Błąd podczas pobierania widoku: {e}")
-            try:
-                page.screenshot(path=screenshot_path)
-                return screenshot_path
-            except Exception:
-                return None
-        finally:
-            browser.close()
-
-def send_telegram_photo(photo_path, caption):
+def send_telegram_message(text):
     if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
         print("Brak tokenu Telegram!")
         return
 
-    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendPhoto"
-    with open(photo_path, "rb") as photo:
-        payload = {
-            "chat_id": TELEGRAM_CHAT_ID,
-            "caption": caption,
-            "parse_mode": "Markdown"
-        }
-        files = {"photo": photo}
-        requests.post(url, data=payload, files=files)
+    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+    payload = {
+        "chat_id": TELEGRAM_CHAT_ID,
+        "text": text,
+        "parse_mode": "Markdown"
+    }
+    requests.post(url, json=payload)
 
 def main():
-    photo = capture_calendar()
-    
-    if photo and os.path.exists(photo):
-        caption = f"✈️ **WizzAir Fare Finder: LTN ➔ POZ**\n🗓️ **Grudzień {YEAR}**"
-        send_telegram_photo(photo, caption)
-        os.remove(photo)
+    flights = get_monthly_prices()
+
+    if flights:
+        msg = f"✈️ **Ceny lotów: {ORIGIN} ➔ {DESTINATION}**\n🗓️ **Grudzień {YEAR} (Kiwi.com)**\n\n"
+        
+        for flight in flights:
+            # Formatowanie daty z timestampu UNIX
+            date_str = datetime.fromtimestamp(flight["dTime"]).strftime("%d.%m (%a)")
+            price = flight["price"]
+            airline = flight["airlines"][0] if flight.get("airlines") else "Flight"
+            
+            msg += f"• `{date_str}` ➔ **{price} GBP** ({airline})\n"
+
+        send_telegram_message(msg)
     else:
-        url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-        payload = {
-            "chat_id": TELEGRAM_CHAT_ID,
-            "text": "⚠️ Nie udało się pobrać zrzutu ekranu z serwera."
-        }
-        requests.post(url, json=payload)
+        send_telegram_message("⚠️ Nie udało się pobrać danych o cenach z Kiwi.com.")
 
 if __name__ == "__main__":
     main()
