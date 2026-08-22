@@ -1,68 +1,92 @@
 import os
+import re
 import requests
 from datetime import datetime
+from PIL import Image
+import pytesseract
 from playwright.sync_api import sync_playwright
 
-ORIGIN = "LTN"      # Londyn Luton
-DESTINATION = "POZ" # Poznań
+ORIGIN = "london-luton"
+DESTINATION = "poznan"
 YEAR = 2026
 MONTH = 12
 
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
-def fetch_prices_with_playwright():
-    flights = []
+def process_image_ocr(image_path, bbox):
+    """Wyciąga tekst z wyciętego fragmentu zrzutu ekranu."""
+    img = Image.open(image_path)
+    cropped = img.crop(bbox) # (left, top, right, bottom)
     
+    # Przetwarzanie OCR skonfigurowane do czytania cyfr i kropek
+    text = pytesseract.image_to_string(cropped, config='--psm 6 -c tessedit_char_whitelist=0123456789.GBP£')
+    
+    # Wyciąganie kwoty za pomocą regex
+    match = re.search(r'(\d+[\.,]\d{2})', text)
+    if match:
+        val = match.group(1).replace(',', '.')
+        return float(val)
+    return None
+
+def fetch_prices_via_ocr():
+    flights = []
+    screenshot_path = "page.png"
+
     with sync_playwright() as p:
-        # Uruchamiamy przeglądarkę Chromium
         browser = p.chromium.launch(headless=True)
-        context = browser.new_context(
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-            viewport={"width": 1280, "height": 800}
-        )
+        # Ustawiamy rozdzielczość tak, by kalendarz mieścił się bez przewijania
+        context = browser.new_context(viewport={"width": 1600, "height": 1000})
         page = context.new_page()
 
         try:
-            # Wejście bezpośrednio na stronę fare-finder WizzAir dla zadanej trasy i miesiąca
-            url = f"https://wizzair.com/pl-pl/flights/fare-finder/{ORIGIN}/{DESTINATION}/{YEAR}-{MONTH:02d}-01"
+            url = f"https://www.wizzair.com/en-gb/flights/fare-finder/{ORIGIN}/{DESTINATION}/0/0/0/1/0/0/{YEAR}-{MONTH:02d}-01/{YEAR}-{MONTH:02d}-01?flexible=anytime&duration=1_week"
             page.goto(url, wait_until="networkidle", timeout=60000)
 
-            # Zamknięcie okna z ciasteczkami jeśli się pojawi
+            # Odrzucenie baneru ciasteczek
             try:
                 page.click("#onetrust-accept-btn-handler", timeout=5000)
             except Exception:
                 pass
 
-            # Czekamy na wyrenderowanie kafelków z cenami w kalendarzu
-            page.wait_for_selector(".fare-finder__calendar__day", timeout=15000)
+            page.wait_for_timeout(3000)
+            page.screenshot(path=screenshot_path)
 
-            days = page.query_selector_all(".fare-finder__calendar__day")
+            # Pobieramy współrzędne wszystkich dativek z kalendarza w lewym panelu (Loty z Luton)
+            day_elements = page.query_selector_all(".fare-finder__calendar__day")
 
-            for day in days:
-                date_attr = day.get_attribute("data-date") # np. 2026-12-15
-                price_elem = day.query_selector(".fare-finder__calendar__price")
+            for elem in day_elements:
+                date_attr = elem.get_attribute("data-date")
                 
-                if date_attr and price_elem:
-                    price_text = price_elem.inner_text().strip()
-                    # Czyszczenie tekstu z waluty (np. "£45.99" lub "45.99 GBP")
-                    price_clean = "".join(c for c in price_text if c.isdigit() or c in ['.', ',']).replace(',', '.')
-                    
-                    if price_clean:
-                        dt = datetime.strptime(date_attr, "%Y-%m-%d")
-                        day_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+                # Zbieramy tylko loty wylotowe dla wybranego miesiąca (z lewego panelu)
+                if date_attr and date_attr.startswith(f"{YEAR}-{MONTH:02d}"):
+                    box = elem.bounding_box()
+                    if box and box['x'] < 800: # Filtrujemy lewy panel (LTN -> POZ)
+                        # Wyznaczamy marginesy do cięcia samej kwoty na kafelku
+                        crop_box = (
+                            int(box['x']),
+                            int(box['y']),
+                            int(box['x'] + box['width']),
+                            int(box['y'] + box['height'])
+                        )
                         
-                        flights.append({
-                            "date": dt.strftime("%d.%m.%Y"),
-                            "day_name": day_names[dt.weekday()],
-                            "price": float(price_clean)
-                        })
+                        price = process_image_ocr(screenshot_path, crop_box)
+                        if price:
+                            dt = datetime.strptime(date_attr, "%Y-%m-%d")
+                            day_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+                            flights.append({
+                                "date": dt.strftime("%d.%m.%Y"),
+                                "day_name": day_names[dt.weekday()],
+                                "price": price
+                            })
 
         except Exception as e:
-            print(f"Błąd Playwright: {e}")
+            print(f"Błąd Playwright/OCR: {e}")
         finally:
             browser.close()
-            
+            if os.path.exists(screenshot_path):
+                os.remove(screenshot_path)
+
     flights.sort(key=lambda x: datetime.strptime(x["date"], "%d.%m.%Y"))
     return flights
 
@@ -80,14 +104,14 @@ def send_telegram_message(message):
     requests.post(url, json=payload)
 
 def main():
-    flights = fetch_prices_with_playwright()
+    flights = fetch_prices_via_ocr()
     
     if not flights:
-        msg = f"📊 **[WizzAir] LTN ➔ POZ (Grudzień {YEAR})**\n\n⚠️ Nie udało się odczytać kalendarza cen ze strony."
+        msg = f"📊 **[WizzAir OCR] LTN ➔ POZ (Grudzień {YEAR})**\n\n⚠️ Nie udało się odczytać cen ze zdjęcia."
         send_telegram_message(msg)
         return
 
-    msg = f"📊 **[WizzAir] Londyn Luton (LTN) ➔ Poznań (POZ)**\n"
+    msg = f"📊 **[WizzAir OCR] Londyn Luton (LTN) ➔ Poznań (POZ)**\n"
     msg += f"🗓️ **Grudzień {YEAR}**\n\n"
     
     for f in flights:
