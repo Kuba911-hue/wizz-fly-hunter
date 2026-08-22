@@ -1,6 +1,7 @@
 import os
 import requests
 from playwright.sync_api import sync_playwright
+from playwright_stealth import stealth_sync
 
 ORIGIN = "london-luton"
 DESTINATION = "poznan"
@@ -14,54 +15,43 @@ def capture_calendar():
     screenshot_path = "calendar.png"
     
     with sync_playwright() as p:
-        # Odpalanie z wyłączonymi flagami botów
-        browser = p.chromium.launch(
-            headless=True,
-            args=[
-                "--disable-blink-features=AutomationControlled",
-                "--no-sandbox",
-                "--disable-setuid-sandbox"
-            ]
-        )
+        # Uruchomienie silnika Firefox - znacznie trudniejszego do zablokowania przez WizzAir
+        browser = p.firefox.launch(headless=True)
         
         context = browser.new_context(
-            viewport={"width": 1400, "height": 900},
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"
+            viewport={"width": 1500, "height": 1000},
+            locale="en-GB"
         )
-
-        # Wstrzykiwanie wskaźnika ukrywającego Selenium/Playwright przed skryptami antybotowymi WizzAira
-        context.add_init_script("""
-            Object.defineProperty(navigator, 'webdriver', {
-                get: () => undefined
-            });
-        """)
-
+        
         page = context.new_page()
+        # Włączenie trybu Stealth (ukrywanie bota)
+        stealth_sync(page)
 
         try:
             url = f"https://www.wizzair.com/en-gb/flights/fare-finder/{ORIGIN}/{DESTINATION}/0/0/0/1/0/0/{YEAR}-{MONTH:02d}-01/{YEAR}-{MONTH:02d}-01?flexible=anytime&duration=1_week"
             
-            page.goto(url, wait_until="networkidle", timeout=60000)
+            page.goto(url, wait_until="domcontentloaded", timeout=60000)
+            
+            # Czekamy na załadowanie cen w kalendarzu (max 20 sekund)
+            try:
+                page.wait_for_selector(".fare-finder__calendar__price", timeout=20000)
+            except Exception:
+                page.wait_for_timeout(8000)
 
-            # 1. Usuwamy baner OneTrust i jego tło bezpośrednio z drzewa DOM
+            # Wycinamy baner cookies bezpośrednio w przeglądarce przed zrobieniem fotki
             page.evaluate("""() => {
                 const elements = document.querySelectorAll('#onetrust-consent-sdk, .onetrust-pc-dark-filter, #onetrust-banner-sdk');
                 elements.forEach(el => el.remove());
-                document.body.style.overflow = 'auto';
             }""")
 
-            # 2. Czekamy aż znikną kółka ładowania i pojawią się ceny (max 15 sek)
-            try:
-                page.wait_for_selector(".fare-finder__calendar__price", timeout=15000)
-            except Exception:
-                page.wait_for_timeout(5000)
+            page.wait_for_timeout(1000)
 
-            # Zrzut ekranu po doczytaniu cen i wyczyszczeniu baneru
+            # Zrzut całego widocznego kalendarza
             page.screenshot(path=screenshot_path)
             return screenshot_path
 
         except Exception as e:
-            print(f"Błąd podczas ładowania: {e}")
+            print(f"Błąd podczas pobierania widoku: {e}")
             try:
                 page.screenshot(path=screenshot_path)
                 return screenshot_path
