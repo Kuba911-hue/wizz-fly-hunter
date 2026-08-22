@@ -14,7 +14,6 @@ def capture_calendar():
     screenshot_path = "calendar.png"
     
     with sync_playwright() as p:
-        # Uruchomienie Firefoxa z wyłączonymi nagłówkami automatyzacji
         browser = p.firefox.launch(headless=True)
         
         context = browser.new_context(
@@ -26,7 +25,6 @@ def capture_calendar():
         
         page = context.new_page()
 
-        # Ukrycie właściwości webdriver przed antybotami
         page.add_init_script("""
             Object.defineProperty(navigator, 'webdriver', {
                 get: () => undefined
@@ -44,12 +42,21 @@ def capture_calendar():
             except Exception:
                 page.wait_for_timeout(8000)
 
-            # Usunięcie baneru ciasteczek bezpośrednio z drzewa DOM
-            page.evaluate("""() => {
-                const elements = document.querySelectorAll('#onetrust-consent-sdk, .onetrust-pc-dark-filter, #onetrust-banner-sdk');
-                elements.forEach(el => el.remove());
-                document.body.style.overflow = 'auto';
-            }""")
+            # Wstrzykujemy regułę CSS, która ukrywa WSZYSTKIE banery prywatności oraz zdejmuje filtrowanie/przyciemnienie ze strony
+            page.add_style_tag(content="""
+                #onetrust-consent-sdk,
+                #onetrust-banner-sdk,
+                .onetrust-pc-dark-filter,
+                div[id*="onetrust"] {
+                    display: none !important;
+                    visibility: hidden !important;
+                    opacity: 0 !important;
+                }
+                body, html {
+                    overflow: auto !important;
+                    filter: none !important;
+                }
+            """)
 
             page.wait_for_timeout(1000)
 
