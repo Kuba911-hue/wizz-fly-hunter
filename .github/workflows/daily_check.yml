@@ -21,7 +21,8 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Instalacja Chromium
-        run: python -m playwright install chromium --with-deps
+        run: python -m playwright install firefox --with-deps
+
 
       - name: Uruchomienie bota
         env:
