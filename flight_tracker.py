@@ -23,26 +23,25 @@ def capture_wizzair():
             timezone_id="Europe/London"
         )
 
-        # Ustawiamy automatyczną akceptację cookies w pamięci przeglądarki PRZED wejściem na stronę
-        context.add_cookies([
-            {"name": "OptanonAlertBoxClosed", "value": "2026-08-01T00:00:00.000Z", "domain": ".wizzair.com", "path": "/"},
-            {"name": "OptanonConsent", "value": "isGpcEnabled=0&dataintel=1&groups=1%3A1%2C2%3A1%2C3%3A1%2C4%3A1", "domain": ".wizzair.com", "path": "/"}
-        ])
-
-        # Blokujemy ładowanie samego skryptu OneTrust
-        context.route("**/*onetrust*", lambda route: route.abort())
-        context.route("**/*otSDKStub*", lambda route: route.abort())
-
         page = context.new_page()
 
         try:
             page.goto(url, wait_until="domcontentloaded", timeout=60000)
+            page.wait_for_timeout(3000)
+
+            # Symulujemy wciśnięcie klawiszy, aby zaakceptować baner rodem z nawigacji klawiaturą (omija Shadow DOM)
+            page.keyboard.press("Tab")
+            page.keyboard.press("Enter")
             
-            # Czekamy na załadowanie kalendarza
-            try:
-                page.wait_for_selector(".fare-finder__calendar__price", timeout=20000)
-            except Exception:
-                page.wait_for_timeout(8000)
+            # Dodatkowo wymuszamy czyszczenie przez wstrzyknięcie czyszczące
+            page.evaluate("""() => {
+                const el = document.querySelector('#onetrust-consent-sdk');
+                if(el) el.remove();
+                document.body.style.overflow = 'auto';
+            }""")
+
+            # Czekamy na załadowanie kalendarza po zamknięciu pop-upa
+            page.wait_for_timeout(5000)
 
             page.screenshot(path=screenshot_path)
             return screenshot_path
