@@ -2,16 +2,22 @@ import os
 import requests
 from playwright.sync_api import sync_playwright
 
-ORIGIN = "LTN"
-DESTINATION = "POZ"
-MONTH = "2026-12"
-
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
 def capture_azair():
     screenshot_path = "azair.png"
-    url = f"https://www.azair.eu/azfind.php?src={ORIGIN}&dst={DESTINATION}&depmonth={MONTH}&minnights=1&maxnights=14&direct=1&currency=GBP"
+    
+    # Poprawny adres URL wyszukiwania na Azair.eu
+    url = (
+        "https://www.azair.eu/azfind.php?"
+        "searchtype=minmax&"
+        "srcLT=any&srcpt=LTN&srcIsAirport=true&"
+        "dstLT=any&dstpt=POZ&dstIsAirport=true&"
+        "depdate=1.12.2026&arrdate=31.12.2026&"
+        "minnights=1&maxnights=14&"
+        "samedest=true&currency=GBP&direct=true"
+    )
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
@@ -19,13 +25,17 @@ def capture_azair():
         page = context.new_page()
 
         try:
-            page.goto(url, wait_until="domcontentloaded", timeout=30000)
-            page.wait_for_timeout(3000)
-            page.screenshot(path=screenshot_path)
+            page.goto(url, wait_until="networkidle", timeout=45000)
+            page.wait_for_timeout(2000)
+            page.screenshot(path=screenshot_path, full_page=False)
             return screenshot_path
         except Exception as e:
             print(f"Błąd Azair: {e}")
-            return None
+            try:
+                page.screenshot(path=screenshot_path)
+                return screenshot_path
+            except Exception:
+                return None
         finally:
             browser.close()
 
@@ -40,7 +50,7 @@ def send_telegram_photo(photo_path, caption):
 def main():
     photo = capture_azair()
     if photo and os.path.exists(photo):
-        send_telegram_photo(photo, f"✈️ **Rozkład & Ceny: LTN ➔ POZ**\n🗓️ **Grudzień 2026 (Azair)**")
+        send_telegram_photo(photo, "✈️ **Rozkład & Ceny: LTN ➔ POZ**\n🗓️ **Grudzień 2026 (Azair)**")
         os.remove(photo)
     else:
         url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
