@@ -9,26 +9,27 @@ TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 RAPIDAPI_KEY = os.environ.get("RAPIDAPI_KEY")
 
-def get_skyscanner_prices():
-    url = "https://skyscanner44.p.rapidapi.com/search-extended"
+def get_flight_prices():
+    url = "https://booking-com15.p.rapidapi.com/api/v1/flights/getMinPrice"
     
     headers = {
         "x-rapidapi-key": RAPIDAPI_KEY,
-        "x-rapidapi-host": "skyscanner44.p.rapidapi.com"
+        "x-rapidapi-host": "booking-com15.p.rapidapi.com"
     }
     
     params = {
-        "adults": "1",
-        "origin": ORIGIN,
-        "destination": DESTINATION,
-        "departureDate": YEAR_MONTH,
-        "currency": "GBP",
-        "locale": "en-GB"
+        "fromId": f"{ORIGIN}.AIRPORT",
+        "toId": f"{DESTINATION}.AIRPORT",
+        "departDate": f"{YEAR_MONTH}-01",
+        "currency_code": "GBP"
     }
 
     try:
         response = requests.get(url, headers=headers, params=params, timeout=20)
-        return response.json()
+        data = response.json()
+        if response.status_code == 200 and data.get("status"):
+            return data.get("data", {})
+        return None
     except Exception as e:
         print(f"Błąd API: {e}")
         return None
@@ -41,17 +42,19 @@ def send_telegram(text):
     requests.post(url, json=payload)
 
 def main():
-    data = get_skyscanner_prices()
+    prices_data = get_flight_prices()
     
-    if data and "itineraries" in str(data):
-        msg = f"✈️ **Ceny Skyscanner: LTN ➔ POZ**\n🗓️ **Grudzień 2026**\n\n"
+    if prices_data:
+        msg = f"✈️ **Ceny lotów: {ORIGIN} ➔ {DESTINATION}**\n🗓️ **Grudzień 2026**\n\n"
         
-        # Wyciąganie i formatowanie cen z odpowiedzi JSON
-        # (struktura zależy od konkretnego API na RapidAPI)
-        msg += "Znaleziono aktualne oferty na ten miesiąc!"
+        for day, info in prices_data.items():
+            price = info.get("price")
+            if price:
+                msg += f"• `{day}`: **{price} GBP**\n"
+                
         send_telegram(msg)
     else:
-        send_telegram("⚠️ Nie udało się pobrać danych z Skyscanner API.")
+        send_telegram("⚠️ Wystąpił problem z pobraniem danych. Sprawdź logi w GitHub Actions.")
 
 if __name__ == "__main__":
     main()
