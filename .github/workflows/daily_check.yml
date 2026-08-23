@@ -1,4 +1,4 @@
-name: ✈️ Daily Skyscanner Price Check
+name: ✈️ Daily Flight Price Check (Azair)
 
 on:
   schedule:
@@ -20,9 +20,11 @@ jobs:
       - name: Instalacja bibliotek
         run: pip install -r requirements.txt
 
+      - name: Instalacja Chromium
+        run: python -m playwright install chromium --with-deps
+
       - name: Uruchomienie bota
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
         run: python flight_tracker.py
