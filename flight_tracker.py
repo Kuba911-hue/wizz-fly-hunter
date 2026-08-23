@@ -22,7 +22,17 @@ def capture_wizzair():
             locale="en-GB",
             timezone_id="Europe/London"
         )
-        
+
+        # Ustawiamy automatyczną akceptację cookies w pamięci przeglądarki PRZED wejściem na stronę
+        context.add_cookies([
+            {"name": "OptanonAlertBoxClosed", "value": "2026-08-01T00:00:00.000Z", "domain": ".wizzair.com", "path": "/"},
+            {"name": "OptanonConsent", "value": "isGpcEnabled=0&dataintel=1&groups=1%3A1%2C2%3A1%2C3%3A1%2C4%3A1", "domain": ".wizzair.com", "path": "/"}
+        ])
+
+        # Blokujemy ładowanie samego skryptu OneTrust
+        context.route("**/*onetrust*", lambda route: route.abort())
+        context.route("**/*otSDKStub*", lambda route: route.abort())
+
         page = context.new_page()
 
         try:
@@ -32,33 +42,8 @@ def capture_wizzair():
             try:
                 page.wait_for_selector(".fare-finder__calendar__price", timeout=20000)
             except Exception:
-                page.wait_for_timeout(6000)
+                page.wait_for_timeout(8000)
 
-            # 1. Spróbujmy kliknąć przycisk "Accept all" lub "Deny all" na banerze OneTrust
-            try:
-                btn = page.query_selector("#onetrust-accept-btn-handler, #onetrust-reject-all-handler")
-                if btn:
-                    btn.click()
-                    page.wait_for_timeout(1000)
-            except Exception:
-                pass
-
-            # 2. Usuwamy fizycznie z drzewa DOM wszystkie nakładki cookies i ich tła
-            page.evaluate("""() => {
-                const selectors = [
-                    '#onetrust-consent-sdk',
-                    '#onetrust-banner-sdk',
-                    '.onetrust-pc-dark-filter',
-                    'div[id*="onetrust"]',
-                    'div[class*="onetrust"]'
-                ];
-                selectors.forEach(selector => {
-                    document.querySelectorAll(selector).forEach(el => el.remove());
-                });
-                document.body.style.overflow = 'auto';
-            }""")
-
-            page.wait_for_timeout(1000)
             page.screenshot(path=screenshot_path)
             return screenshot_path
 
