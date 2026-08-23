@@ -28,36 +28,37 @@ def capture_wizzair():
         try:
             page.goto(url, wait_until="domcontentloaded", timeout=60000)
             
-            # Czekamy na załadowanie elementów kalendarza z cenami
+            # Czekamy na załadowanie kalendarza
             try:
                 page.wait_for_selector(".fare-finder__calendar__price", timeout=20000)
             except Exception:
-                page.wait_for_timeout(8000)
+                page.wait_for_timeout(6000)
 
-            # Wstrzykujemy regułę CSS ukrywającą banery zgód i zdejmującą przyciemnienie/blokadę strony
+            # 1. Spróbujmy kliknąć przycisk "Accept all" lub "Deny all" na banerze OneTrust
+            try:
+                btn = page.query_selector("#onetrust-accept-btn-handler, #onetrust-reject-all-handler")
+                if btn:
+                    btn.click()
+                    page.wait_for_timeout(1000)
+            except Exception:
+                pass
+
+            # 2. Usuwamy fizycznie z drzewa DOM wszystkie nakładki cookies i ich tła
             page.evaluate("""() => {
-                const style = document.createElement('style');
-                style.innerHTML = `
-                    #onetrust-consent-sdk, 
-                    #onetrust-banner-sdk, 
-                    .onetrust-pc-dark-filter, 
-                    [id*="onetrust"], 
-                    [class*="onetrust"] {
-                        display: none !important;
-                        visibility: hidden !important;
-                        opacity: 0 !important;
-                        pointer-events: none !important;
-                    }
-                    body, html {
-                        overflow: auto !important;
-                        position: static !important;
-                        filter: none !important;
-                    }
-                `;
-                document.head.appendChild(style);
+                const selectors = [
+                    '#onetrust-consent-sdk',
+                    '#onetrust-banner-sdk',
+                    '.onetrust-pc-dark-filter',
+                    'div[id*="onetrust"]',
+                    'div[class*="onetrust"]'
+                ];
+                selectors.forEach(selector => {
+                    document.querySelectorAll(selector).forEach(el => el.remove());
+                });
+                document.body.style.overflow = 'auto';
             }""")
 
-            page.wait_for_timeout(1500)
+            page.wait_for_timeout(1000)
             page.screenshot(path=screenshot_path)
             return screenshot_path
 
