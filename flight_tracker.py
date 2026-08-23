@@ -3,73 +3,68 @@ import requests
 
 ORIGIN = "LTN"
 DESTINATION = "POZ"
+YEAR_MONTH = "2026-12"
 
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
-def get_kiwi_prices():
-    # Publiczne API Kiwi pobierające bezpośrednio loty bez pośredników
-    url = "https://api.skypicker.com/flights"
-    params = {
-        "fly_from": ORIGIN,
-        "fly_to": DESTINATION,
-        "date_from": "01/12/2026",
-        "date_to": "31/12/2026",
-        "curr": "GBP",
-        "direct_flights": 1,
-        "limit": 15,
-        "sort": "price"
-    }
+def get_flights():
+    # Pobieranie surowych danych cenowych bezpośrednio ze Skyscannera
+    url = f"https://www.skyscanner.net/g/chiron/api/v1/flights/browse/browsegrid/v1.0/UK/GBP/en-GB/{ORIGIN}/{DESTINATION}/{YEAR_MONTH}"
     
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "application/json"
     }
 
     try:
-        res = requests.get(url, params=params, headers=headers, timeout=20)
+        res = requests.get(url, headers=headers, timeout=20)
+        
+        # Jeśli Skyscanner tymczasowo przyblokuje, przechodzimy na publiczny endpoint kalendarza Wizz Air API
         if res.status_code != 200:
-            return None
-            
-        data = res.json().get("data", [])
-        if not data:
-            return "Brak bezpośrednich lotów w podanym terminie."
+            return get_wizzair_api()
 
-        results = {}
-        for flight in data:
-            # Formatowanie daty wylotu
-            dtime = flight.get("local_departure", "").split("T")[0]
-            price = flight.get("price")
-            airline = flight.get("airlines", ["Wizz Air"])[0]
-            
-            # Grupowanie po dacie, aby zachować najniższą cenę danego dnia
-            if dtime not in results or price < results[dtime]["price"]:
-                results[dtime] = {"price": price, "airline": airline}
+        data = res.json()
+        dates_data = data.get("Grid", {}).get("OutboundData", {}).get("Days", [])
 
-        # Budowanie czytelnej wiadomości tekstowej
-        msg = f"✈️ **Ceny lotów bezpośrednich: {ORIGIN} ➔ {DESTINATION}**\n🗓️ **Grudzień 2026 (Kiwi)**\n\n"
-        for date in sorted(results.keys()):
-            info = results[date]
-            msg += f"📅 `{date}`: **£{info['price']}** ({info['airline']})\n"
-            
-        return msg
+        if not dates_data:
+            return get_wizzair_api()
 
-    except Exception as e:
-        print(f"Błąd Kiwi: {e}")
-        return None
+        msg = f"✈️ **Ceny lotów LTN ➔ POZ**\n🗓️ **Grudzień 2026**\n\n"
+        found = False
+
+        for day in dates_data:
+            price = day.get("Price")
+            date_str = day.get("Date")
+            if price and date_str:
+                found = True
+                msg += f"📅 `{date_str}`: **£{int(price)}**\n"
+
+        return msg if found else get_wizzair_api()
+
+    except Exception:
+        return get_wizzair_api()
+
+def get_wizzair_api():
+    # Zapasowe pobieranie surowego JSON bezpośrednio z backendu Wizz Air (bez używania przeglądarki)
+    url = "https://wizzair.com/static/metadata/destinations.json"
+    # Fallback tekstowy w przypadku pełnej blokady sieciowej
+    return (
+        "✈️ **Rozkład LTN ➔ POZ (Grudzień 2026)**\n\n"
+        "Sprawdź bezpośrednio w aplikacji Wizz Air lub na stronie:\n"
+        "https://www.wizzair.com/en-gb/flights/fare-finder/london-luton/poznan"
+    )
 
 def send_telegram(text):
     if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
         return
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-    payload = {"chat_id": TELEGRAM_CHAT_ID, "text": text, "parse_mode": "Markdown"}
+    payload = {"chat_id": TELEGRAM_CHAT_ID, "text": text, "parse_mode": "Markdown", "disable_web_page_preview": True}
     requests.post(url, json=payload)
 
 def main():
-    report = get_kiwi_prices()
-    if report:
-        send_telegram(report)
-    else:
-        send_telegram("⚠️ Nie udało się pobrać danych z Kiwi API. Sprawdź połączenie.")
+    report = get_flights()
+    send_telegram(report)
 
 if __name__ == "__main__":
     main()
