@@ -70,8 +70,38 @@ def get_december_flights():
                     price = flight.get("price", "N/A")
                     dep_time = flight_details.get("departure_airport", {}).get("time", "").split(" ")[-1]
                     
-                    msg += f"📅 `{date_str}` ({dep_time}): **£{price}**\n"
-                    current_data.append({"date": date_str, "time": dep_time, "airline": "Wizz Air", "price": price})
+                    # Logika porównywania cen
+                    trend = "🆕"
+                    trend_html = "<span style='color: #666;'>🆕 Nowy</span>"
+                    price_diff = ""
+                    row_bg = ""
+
+                    if date_str in history and len(history[date_str]) > 0:
+                        last_price = history[date_str][-1]["price"]
+                        if isinstance(price, int) and isinstance(last_price, int):
+                            diff = price - last_price
+                            if diff < 0:
+                                trend = f"🟢 ↓ (-£{abs(diff)})"
+                                trend_html = f"<span style='color: #28a745; font-weight: bold;'>🟢 ↓ (-£{abs(diff)})</span>"
+                                row_bg = "style='background-color: #d4edda;'" # zielone tło przy spadku
+                            elif diff > 0:
+                                trend = f"🔴 ↑ (+£{diff})"
+                                trend_html = f"<span style='color: #dc3545; font-weight: bold;'>🔴 ↑ (+£{diff})</span>"
+                                row_bg = "style='background-color: #f8d7da;'" # czerwone tło przy wzroście
+                            else:
+                                trend = "⚪ ="
+                                trend_html = "<span style='color: #6c757d;'>⚪ Bez zmian</span>"
+
+                    msg += f"📅 `{date_str}` ({dep_time}): **£{price}** {trend}\n"
+                    
+                    current_data.append({
+                        "date": date_str,
+                        "time": dep_time,
+                        "airline": "Wizz Air",
+                        "price": price,
+                        "trend_html": trend_html,
+                        "row_bg": row_bg
+                    })
                     
                     if date_str not in history:
                         history[date_str] = []
@@ -82,7 +112,14 @@ def get_december_flights():
             
             if not day_flight_found:
                 msg += f"📅 `{date_str}`: *Brak lotu Wizz Air*\n"
-                current_data.append({"date": date_str, "time": "-", "airline": "-", "price": "Brak"})
+                current_data.append({
+                    "date": date_str,
+                    "time": "-",
+                    "airline": "-",
+                    "price": "Brak",
+                    "trend_html": "-",
+                    "row_bg": ""
+                })
 
             time.sleep(0.5)
 
@@ -90,7 +127,7 @@ def get_december_flights():
             print(f"Błąd dla daty {date_str}: {e}")
 
     save_history(history)
-    msg += f"\n🌐 [Zobacz historię i wykreślenie cen na stronie]({SITE_URL})"
+    msg += f"\n🌐 [Zobacz pełną historię cen na stronie]({SITE_URL})"
 
     return msg, current_data, history
 
@@ -100,14 +137,13 @@ def generate_html(current_data, history):
     current_rows = ""
     for row in current_data:
         p_val = row['price']
-        highlight = "style='background-color: #e6ffe6; font-weight: bold;'" if isinstance(p_val, int) and p_val <= 70 else ""
         price_str = f"£{p_val}" if isinstance(p_val, int) else p_val
-        current_rows += f"<tr {highlight}><td>{row['date']}</td><td>{row['time']}</td><td>{row['airline']}</td><td>{price_str}</td></tr>\n"
+        current_rows += f"<tr {row['row_bg']}><td>{row['date']}</td><td>{row['time']}</td><td>{row['airline']}</td><td><strong>{price_str}</strong></td><td>{row['trend_html']}</td></tr>\n"
 
     history_rows = ""
     for date_str in sorted(history.keys()):
         entries = history[date_str]
-        changes = " ➔ ".join([f"£{e['price']} ({e['timestamp']})" for e in entries])
+        changes = " ➔ ".join([f"£{e['price']} <small style='color:#777'>({e['timestamp']})</small>" for e in entries])
         history_rows += f"<tr><td><strong>{date_str}</strong></td><td>{changes}</td></tr>\n"
 
     html_content = f"""<!DOCTYPE html>
@@ -118,12 +154,12 @@ def generate_html(current_data, history):
     <title>Ceny lotów LTN -> POZ</title>
     <style>
         body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 20px; background-color: #f8f9fa; color: #333; }}
-        .container {{ max-width: 800px; margin: 0 auto; }}
+        .container {{ max-width: 850px; margin: 0 auto; }}
         h2, h3 {{ color: #0056b3; }}
         table {{ width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 30px; }}
         th, td {{ padding: 12px 15px; text-align: left; border-bottom: 1px solid #eee; }}
         th {{ background-color: #0056b3; color: white; }}
-        tr:hover {{ background-color: #f1f1f1; }}
+        tr:hover {{ opacity: 0.9; }}
         .updated {{ font-size: 0.85em; color: #666; margin-top: 15px; }}
     </style>
 </head>
@@ -132,7 +168,7 @@ def generate_html(current_data, history):
         <h2>✈️ Ceny lotów London Luton (LTN) ➔ Poznań (POZ)</h2>
         <p>Grudzień 2026 (Wizz Air)</p>
         
-        <h3>📊 Ostatnie zestawienie</h3>
+        <h3>📊 Aktualne zestawienie i zmiana ceny</h3>
         <table>
             <thead>
                 <tr>
@@ -140,6 +176,7 @@ def generate_html(current_data, history):
                     <th>Godzina</th>
                     <th>Linia</th>
                     <th>Cena</th>
+                    <th>Zmiana</th>
                 </tr>
             </thead>
             <tbody>
@@ -147,12 +184,12 @@ def generate_html(current_data, history):
             </tbody>
         </table>
 
-        <h3>📜 Historia zmian cen</h3>
+        <h3>📜 Historia pomiarów</h3>
         <table>
             <thead>
                 <tr>
                     <th>Data lotu</th>
-                    <th>Historia pomiarów (Cena i czas)</th>
+                    <th>Historia zmian cen</th>
                 </tr>
             </thead>
             <tbody>
