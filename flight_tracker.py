@@ -1,60 +1,50 @@
 import os
 import requests
+from playwright.sync_api import sync_playwright
 
 ORIGIN = "LTN"
 DESTINATION = "POZ"
-YEAR_MONTH = "2026-12"
+MONTH = "2026-12"
 
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
-RAPIDAPI_KEY = os.environ.get("RAPIDAPI_KEY")
 
-def get_flight_prices():
-    url = "https://booking-com15.p.rapidapi.com/api/v1/flights/getMinPrice"
-    
-    headers = {
-        "x-rapidapi-key": RAPIDAPI_KEY,
-        "x-rapidapi-host": "booking-com15.p.rapidapi.com"
-    }
-    
-    params = {
-        "fromId": f"{ORIGIN}.AIRPORT",
-        "toId": f"{DESTINATION}.AIRPORT",
-        "departDate": f"{YEAR_MONTH}-01",
-        "currency_code": "GBP"
-    }
+def capture_azair():
+    screenshot_path = "azair.png"
+    url = f"https://www.azair.eu/azfind.php?src={ORIGIN}&dst={DESTINATION}&depmonth={MONTH}&minnights=1&maxnights=14&direct=1&currency=GBP"
 
-    try:
-        response = requests.get(url, headers=headers, params=params, timeout=20)
-        data = response.json()
-        if response.status_code == 200 and data.get("status"):
-            return data.get("data", {})
-        return None
-    except Exception as e:
-        print(f"Błąd API: {e}")
-        return None
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context(viewport={"width": 1280, "height": 900})
+        page = context.new_page()
 
-def send_telegram(text):
+        try:
+            page.goto(url, wait_until="domcontentloaded", timeout=30000)
+            page.wait_for_timeout(3000)
+            page.screenshot(path=screenshot_path)
+            return screenshot_path
+        except Exception as e:
+            print(f"Błąd Azair: {e}")
+            return None
+        finally:
+            browser.close()
+
+def send_telegram_photo(photo_path, caption):
     if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
         return
-    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-    payload = {"chat_id": TELEGRAM_CHAT_ID, "text": text, "parse_mode": "Markdown"}
-    requests.post(url, json=payload)
+    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendPhoto"
+    with open(photo_path, "rb") as photo:
+        payload = {"chat_id": TELEGRAM_CHAT_ID, "caption": caption, "parse_mode": "Markdown"}
+        requests.post(url, data=payload, files={"photo": photo})
 
 def main():
-    prices_data = get_flight_prices()
-    
-    if prices_data:
-        msg = f"✈️ **Ceny lotów: {ORIGIN} ➔ {DESTINATION}**\n🗓️ **Grudzień 2026**\n\n"
-        
-        for day, info in prices_data.items():
-            price = info.get("price")
-            if price:
-                msg += f"• `{day}`: **{price} GBP**\n"
-                
-        send_telegram(msg)
+    photo = capture_azair()
+    if photo and os.path.exists(photo):
+        send_telegram_photo(photo, f"✈️ **Rozkład & Ceny: LTN ➔ POZ**\n🗓️ **Grudzień 2026 (Azair)**")
+        os.remove(photo)
     else:
-        send_telegram("⚠️ Wystąpił problem z pobraniem danych. Sprawdź logi w GitHub Actions.")
+        url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+        requests.post(url, json={"chat_id": TELEGRAM_CHAT_ID, "text": "⚠️ Nie udało się pobrać zrzutu ekranu."})
 
 if __name__ == "__main__":
     main()
