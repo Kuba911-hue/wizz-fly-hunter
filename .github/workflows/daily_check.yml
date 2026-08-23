@@ -1,4 +1,4 @@
-name: ✈️ Daily Flight Price Check (Azair)
+name: ✈️ Daily Kiwi Price Check
 
 on:
   schedule:
@@ -19,10 +19,6 @@ jobs:
 
       - name: Instalacja bibliotek
         run: pip install -r requirements.txt
-
-      - name: Instalacja Chromium
-        run: python -m playwright install firefox --with-deps
-
 
       - name: Uruchomienie bota
         env:
