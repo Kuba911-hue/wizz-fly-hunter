@@ -1,4 +1,4 @@
-name: ✈️ Daily Kiwi Price Check
+name: ✈️ Daily Google Flights Price Check
 
 on:
   schedule:
@@ -24,4 +24,5 @@ jobs:
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SERPAPI_KEY: ${{ secrets.SERPAPI_KEY }}
         run: python flight_tracker.py
