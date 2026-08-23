@@ -1,60 +1,53 @@
 import os
 import requests
+from serpapi import GoogleSearch
 
 ORIGIN = "LTN"
 DESTINATION = "POZ"
-YEAR_MONTH = "2026-12"
 
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
+SERP_KEY = os.environ.get("SERPAPI_KEY")
 
-def get_wizzair_prices():
-    url = "https://be.wizzair.com/24.5.0/api/search/timetable"
-    
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-        "Accept": "application/json, text/plain, */*",
-        "Content-Type": "application/json"
-    }
+def get_google_flights():
+    if not SERP_KEY:
+        return "⚠️ Błąd: Brak klucza SERPAPI_KEY."
 
-    payload = {
-        "flightList": [
-            {
-                "departureStation": ORIGIN,
-                "arrivalStation": DESTINATION,
-                "from": f"{YEAR_MONTH}-01",
-                "to": f"{YEAR_MONTH}-31"
-            }
-        ],
-        "priceType": "regular"
+    # Pobieramy najniższe ceny lotów na grudzień 2026
+    params = {
+        "engine": "google_flights",
+        "departure_id": ORIGIN,
+        "arrival_id": DESTINATION,
+        "outbound_date": "2026-12-18",
+        "currency": "GBP",
+        "hl": "pl",
+        "type": "2",
+        "api_key": SERP_KEY
     }
 
     try:
-        response = requests.post(url, json=payload, headers=headers, timeout=20)
+        search = GoogleSearch(params)
+        results = search.get_dict()
         
-        if response.status_code != 200:
-            return f"⚠️ Wizz Air API zwróciło status: {response.status_code}"
+        flights = results.get("best_flights", []) + results.get("other_flights", [])
+        
+        if not flights:
+            return "Brak znalezionych lotów w Google Flights."
 
-        data = response.json()
-        outbound_flights = data.get("outboundFlights", [])
-
-        if not outbound_flights:
-            return "Brak dostępnych lotów bezpośrednich w tym miesiącu."
-
-        msg = f"✈️ **Wizz Air: LTN ➔ POZ**\n🗓️ **Grudzień 2026**\n\n"
-        for flight in outbound_flights:
-            date = flight.get("departureDate", "").split("T")[0]
-            price_obj = flight.get("price", {})
-            amount = price_obj.get("amount")
-            currency = price_obj.get("currencyCode", "GBP")
+        msg = f"✈️ **Ceny lotów LTN ➔ POZ (Google Flights)**\n🗓️ **Grudzień 2026**\n\n"
+        
+        for flight in flights[:10]:
+            price = flight.get("price", "N/A")
+            flight_details = flight.get("flights", [{}])[0]
+            airline = flight_details.get("airline", "Linia lotnicza")
+            dep_time = flight_details.get("departure_airport", {}).get("time", "")
             
-            if amount is not None:
-                msg += f"📅 `{date}`: **{amount:.2f} {currency}**\n"
+            msg += f"📅 `{dep_time}` | **{airline}** | Cena: **£{price}**\n"
 
         return msg
 
     except Exception as e:
-        return f"⚠️ Błąd podczas połączenia z API Wizz Air: {e}"
+        return f"⚠️ Błąd SerpApi: {e}"
 
 def send_telegram(text):
     if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
@@ -64,7 +57,7 @@ def send_telegram(text):
     requests.post(url, json=payload)
 
 def main():
-    report = get_wizzair_prices()
+    report = get_google_flights()
     send_telegram(report)
 
 if __name__ == "__main__":
