@@ -3,123 +3,204 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ceny lotów LTN -> POZ</title>
+    <title>WizzAir Flight Radar - LTN to POZ</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 20px; background-color: #f4f6f9; color: #333; }
-        .container { max-width: 900px; margin: 0 auto; }
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 25px; }
-        h2, h3 { color: #0056b3; margin-top: 0; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #edf2f7; }
-        th { background-color: #0056b3; color: white; font-weight: 600; }
-        th:first-child { border-top-left-radius: 8px; }
-        th:last-child { border-top-right-radius: 8px; }
-        .updated { font-size: 0.85em; color: #6c757d; text-align: right; margin-top: 10px; }
-        .chart-container { position: relative; height: 350px; width: 100%; }
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --primary: #38bdf8;
+            --success-bg: rgba(16, 185, 129, 0.15);
+            --danger-bg: rgba(239, 68, 68, 0.15);
+        }
+
+        @media (prefers-color-scheme: light) {
+            :root {
+                --bg-color: #f8fafc;
+                --card-bg: #ffffff;
+                --text-color: #0f172a;
+                --text-muted: #64748b;
+                --border-color: #e2e8f0;
+                --primary: #0284c7;
+                --success-bg: #dcfce7;
+                --danger-bg: #fee2e2;
+            }
+        }
+
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 20px; background-color: var(--bg-color); color: var(--text-color); }
+        .container { max-width: 1000px; margin: 0 auto; }
+        
+        .card { background: var(--card-bg); padding: 20px; border-radius: 16px; border: 1px solid var(--border-color); margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        
+        .deal-banner { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .deal-card { background: var(--card-bg); border: 1px solid var(--border-color); padding: 15px; border-radius: 12px; text-align: center; }
+        .deal-card h4 { margin: 0 0 5px 0; color: var(--text-muted); font-size: 0.85em; text-transform: uppercase; }
+        .deal-card .val { font-size: 1.6em; font-weight: bold; color: var(--primary); }
+
+        h2, h3 { color: var(--text-color); margin-top: 0; }
+        .text-muted { color: var(--text-muted); }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.95em; }
+        th, td { padding: 12px 10px; text-align: left; border-bottom: 1px solid var(--border-color); }
+        th { background-color: rgba(0,0,0,0.05); color: var(--text-muted); font-weight: 600; }
+
+        .table-success-custom { background-color: var(--success-bg); }
+        .table-danger-custom { background-color: var(--danger-bg); }
+
+        .badge { display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 0.8em; font-weight: 600; }
+        .bg-success { background: #10b981; color: white; }
+        .bg-danger { background: #ef4444; color: white; }
+        .bg-secondary { background: #6b7280; color: white; }
+        .bg-warning { background: #f59e0b; color: white; }
+
+        .history-badge { display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.85em; border: 1px solid var(--border-color); }
+        .badge-neutral { background: rgba(255,255,255,0.05); }
+        .badge-down { background: var(--success-bg); color: #10b981; border-color: #10b981; }
+        .badge-up { background: var(--danger-bg); color: #ef4444; border-color: #ef4444; }
+        .history-badge .ts { font-size: 0.75em; opacity: 0.7; }
+
+        .chart-container { position: relative; height: 320px; width: 100%; }
+        .table-responsive { overflow-x: auto; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="card">
-            <h2>✈️ Ceny lotów London Luton (LTN) ➔ Poznań (POZ)</h2>
-            <p style="color: #666; margin-bottom: 0;">Okres: <strong>15–24 Grudnia 2026</strong> (Wizz Air)</p>
+            <h2>✈️ WizzAir Radar: Luton (LTN) ➔ Poznań (POZ)</h2>
+            <p class="text-muted" style="margin:0;">Monitoring cen na okres: <strong>15–24 Grudnia 2026</strong></p>
         </div>
 
-        <div class="card">
-            <h3>📈 Wykres zmian cen w czasie</h3>
-            <div class="chart-container">
-                <canvas id="priceChart"></canvas>
+        <div class="deal-banner">
+            <div class="deal-card">
+                <h4>🔥 Najtańsza opcja</h4>
+                <div class="val" style="color: #10b981;">Śr, 16 Gru (£61)</div>
+            </div>
+            <div class="deal-card">
+                <h4>📊 Średnia cena okresu</h4>
+                <div class="val">£114</div>
+            </div>
+            <div class="deal-card">
+                <h4>🔄 Ostatni odczyt</h4>
+                <div class="val" style="font-size: 1.1em; line-height: 2.2;">12:48:52 UTC</div>
             </div>
         </div>
 
         <div class="card">
-            <h3>📊 Aktualne ceny i ost. zmiana</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Data lotu</th>
-                        <th>Godzina</th>
-                        <th>Linia</th>
-                        <th>Cena</th>
-                        <th>Status / Zmiana</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr ><td><strong>2026-12-15</strong></td><td>07:45</td><td>Wizz Air</td><td><strong>£64</strong></td><td><span style='color: #6c757d;'>⚪ Bez zmian</span></td></tr>
-<tr ><td><strong>2026-12-16</strong></td><td>07:45</td><td>Wizz Air</td><td><strong>£61</strong></td><td><span style='color: #6c757d;'>⚪ Bez zmian</span></td></tr>
-<tr ><td><strong>2026-12-17</strong></td><td>07:45</td><td>Wizz Air</td><td><strong>£115</strong></td><td><span style='color: #6c757d;'>⚪ Bez zmian</span></td></tr>
-<tr ><td><strong>2026-12-18</strong></td><td>07:45</td><td>Wizz Air</td><td><strong>£106</strong></td><td><span style='color: #6c757d;'>⚪ Bez zmian</span></td></tr>
-<tr ><td><strong>2026-12-19</strong></td><td>07:45</td><td>Wizz Air</td><td><strong>£142</strong></td><td><span style='color: #6c757d;'>⚪ Bez zmian</span></td></tr>
-<tr ><td><strong>2026-12-20</strong></td><td>07:45</td><td>Wizz Air</td><td><strong>£124</strong></td><td><span style='color: #6c757d;'>⚪ Bez zmian</span></td></tr>
-<tr ><td><strong>2026-12-21</strong></td><td>07:45</td><td>Wizz Air</td><td><strong>£115</strong></td><td><span style='color: #6c757d;'>⚪ Bez zmian</span></td></tr>
-<tr ><td><strong>2026-12-22</strong></td><td>07:45</td><td>Wizz Air</td><td><strong>£142</strong></td><td><span style='color: #6c757d;'>⚪ Bez zmian</span></td></tr>
-<tr ><td><strong>2026-12-23</strong></td><td>07:45</td><td>Wizz Air</td><td><strong>£152</strong></td><td><span style='color: #6c757d;'>⚪ Bez zmian</span></td></tr>
-<tr ><td><strong>2026-12-24</strong></td><td>07:45</td><td>Wizz Air</td><td><strong>£115</strong></td><td><span style='color: #6c757d;'>⚪ Bez zmian</span></td></tr>
-
-                </tbody>
-            </table>
+            <h3>📊 Porównanie cen dzisiejszych</h3>
+            <div class="chart-container">
+                <canvas id="barChart"></canvas>
+            </div>
         </div>
 
         <div class="card">
-            <h3>📜 Pełna historia pomiarów</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Data lotu</th>
-                        <th>Historia odczytów</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr><td style='white-space: nowrap;'><strong>2026-12-15</strong></td><td><span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£64</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 09:07)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£64</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 09:13)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£64</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 09:31)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£64</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 13:16)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£64</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 14:26)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£64</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 20:00)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£64</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-25 09:10)</span></span></td></tr>
-<tr><td style='white-space: nowrap;'><strong>2026-12-16</strong></td><td><span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£61</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 09:07)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£61</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 09:13)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£61</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 09:31)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£61</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 13:16)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£61</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 14:26)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£61</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 20:00)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£61</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-25 09:10)</span></span></td></tr>
-<tr><td style='white-space: nowrap;'><strong>2026-12-17</strong></td><td><span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£115</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 09:07)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£115</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 09:13)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£115</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 09:31)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£115</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 13:16)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£115</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 14:26)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£115</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 20:00)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£115</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-25 09:10)</span></span></td></tr>
-<tr><td style='white-space: nowrap;'><strong>2026-12-18</strong></td><td><span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£106</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 09:07)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£106</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 09:13)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£106</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 09:31)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£106</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 13:16)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£106</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 14:26)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£106</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 20:00)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£106</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-25 09:10)</span></span></td></tr>
-<tr><td style='white-space: nowrap;'><strong>2026-12-19</strong></td><td><span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£142</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 09:07)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£142</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 09:13)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£142</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 09:31)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£142</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 13:16)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£142</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 14:26)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£142</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 20:00)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£142</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-25 09:10)</span></span></td></tr>
-<tr><td style='white-space: nowrap;'><strong>2026-12-20</strong></td><td><span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£124</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 09:07)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£124</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 09:13)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£124</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 09:31)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£124</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 13:16)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£124</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 14:26)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£124</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 20:00)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£124</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-25 09:10)</span></span></td></tr>
-<tr><td style='white-space: nowrap;'><strong>2026-12-21</strong></td><td><span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£115</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 09:07)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£115</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 09:13)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£115</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 09:31)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£115</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 13:16)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£115</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 14:26)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£115</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 20:00)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£115</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-25 09:10)</span></span></td></tr>
-<tr><td style='white-space: nowrap;'><strong>2026-12-22</strong></td><td><span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£142</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 09:07)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£142</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 09:13)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£142</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 09:31)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£142</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 13:16)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£142</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 14:26)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£142</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 20:00)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£142</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-25 09:10)</span></span></td></tr>
-<tr><td style='white-space: nowrap;'><strong>2026-12-23</strong></td><td><span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£152</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 09:07)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£152</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 09:13)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£152</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 09:31)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£152</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 13:16)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£152</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 14:26)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£152</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 20:00)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£152</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-25 09:10)</span></span></td></tr>
-<tr><td style='white-space: nowrap;'><strong>2026-12-24</strong></td><td><span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£115</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 09:07)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£115</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 09:13)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£115</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 09:31)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£115</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 13:16)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£115</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 14:26)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£115</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-24 20:00)</span></span> ➔ <span style='display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.9em; background: #e9ecef; color: #495057;'><strong>£115</strong> <span style='font-size: 0.75em; opacity: 0.75;'>(2026-08-25 09:10)</span></span></td></tr>
+            <h3>📈 Historia zmian w czasie</h3>
+            <div class="chart-container">
+                <canvas id="lineChart"></canvas>
+            </div>
+        </div>
 
-                </tbody>
-            </table>
-            <p class="updated">Ostatnia aktualizacja danych: 2026-08-25 09:11:02 UTC</p>
+        <div class="card">
+            <h3>📋 Aktualne zestawienie</h3>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Godz.</th>
+                            <th>Cena</th>
+                            <th>Min. hist.</th>
+                            <th>Zmiana</th>
+                            <th>Rekomendacja</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class=''><td><strong>Wt, 15 Gru</strong></td><td>07:45</td><td><strong>£64</strong></td><td><small class='text-muted'>£64</small></td><td><span class='badge bg-secondary'>⚪ Bez zmian</span></td><td><span class='badge bg-warning text-dark'>⚖️ ŚREDNIA</span></td></tr>
+<tr class=''><td><strong>Śr, 16 Gru</strong></td><td>07:45</td><td><strong>£61</strong></td><td><small class='text-muted'>£61</small></td><td><span class='badge bg-secondary'>⚪ Bez zmian</span></td><td><span class='badge bg-success'>🔥 KUP TERAZ</span></td></tr>
+<tr class=''><td><strong>Czw, 17 Gru</strong></td><td>07:45</td><td><strong>£115</strong></td><td><small class='text-muted'>£115</small></td><td><span class='badge bg-secondary'>⚪ Bez zmian</span></td><td><span class='badge bg-danger'>⏳ CZEKAJ</span></td></tr>
+<tr class=''><td><strong>Pt, 18 Gru</strong></td><td>07:45</td><td><strong>£106</strong></td><td><small class='text-muted'>£106</small></td><td><span class='badge bg-secondary'>⚪ Bez zmian</span></td><td><span class='badge bg-warning text-dark'>⚖️ ŚREDNIA</span></td></tr>
+<tr class=''><td><strong>Sob, 19 Gru</strong></td><td>07:45</td><td><strong>£142</strong></td><td><small class='text-muted'>£142</small></td><td><span class='badge bg-secondary'>⚪ Bez zmian</span></td><td><span class='badge bg-danger'>⏳ CZEKAJ</span></td></tr>
+<tr class=''><td><strong>Niedz, 20 Gru</strong></td><td>07:45</td><td><strong>£124</strong></td><td><small class='text-muted'>£124</small></td><td><span class='badge bg-secondary'>⚪ Bez zmian</span></td><td><span class='badge bg-danger'>⏳ CZEKAJ</span></td></tr>
+<tr class=''><td><strong>Pon, 21 Gru</strong></td><td>07:45</td><td><strong>£115</strong></td><td><small class='text-muted'>£115</small></td><td><span class='badge bg-secondary'>⚪ Bez zmian</span></td><td><span class='badge bg-danger'>⏳ CZEKAJ</span></td></tr>
+<tr class=''><td><strong>Wt, 22 Gru</strong></td><td>07:45</td><td><strong>£142</strong></td><td><small class='text-muted'>£142</small></td><td><span class='badge bg-secondary'>⚪ Bez zmian</span></td><td><span class='badge bg-danger'>⏳ CZEKAJ</span></td></tr>
+<tr class=''><td><strong>Śr, 23 Gru</strong></td><td>07:45</td><td><strong>£152</strong></td><td><small class='text-muted'>£152</small></td><td><span class='badge bg-secondary'>⚪ Bez zmian</span></td><td><span class='badge bg-danger'>⏳ CZEKAJ</span></td></tr>
+<tr class=''><td><strong>Czw, 24 Gru</strong></td><td>07:45</td><td><strong>£115</strong></td><td><small class='text-muted'>£115</small></td><td><span class='badge bg-secondary'>⚪ Bez zmian</span></td><td><span class='badge bg-danger'>⏳ CZEKAJ</span></td></tr>
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>📜 Chronologiczny zapis pomiarów</h3>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Data lotu</th>
+                            <th>Przebieg cenowy</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td style='white-space: nowrap;'><strong>Wt, 15 Gru</strong></td><td><span class='history-badge badge-neutral'><strong>£64</strong> <span class='ts'>(2026-08-24 09:07)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£64</strong> <span class='ts'>(2026-08-24 09:13)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£64</strong> <span class='ts'>(2026-08-24 09:31)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£64</strong> <span class='ts'>(2026-08-24 13:16)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£64</strong> <span class='ts'>(2026-08-24 14:26)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£64</strong> <span class='ts'>(2026-08-24 20:00)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£64</strong> <span class='ts'>(2026-08-25 09:10)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£64</strong> <span class='ts'>(2026-08-25 12:48)</span></span></td></tr>
+<tr><td style='white-space: nowrap;'><strong>Śr, 16 Gru</strong></td><td><span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-08-24 09:07)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-08-24 09:13)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-08-24 09:31)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-08-24 13:16)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-08-24 14:26)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-08-24 20:00)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-08-25 09:10)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-08-25 12:48)</span></span></td></tr>
+<tr><td style='white-space: nowrap;'><strong>Czw, 17 Gru</strong></td><td><span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-24 09:07)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-24 09:13)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-24 09:31)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-24 13:16)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-24 14:26)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-24 20:00)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-25 09:10)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-25 12:48)</span></span></td></tr>
+<tr><td style='white-space: nowrap;'><strong>Pt, 18 Gru</strong></td><td><span class='history-badge badge-neutral'><strong>£106</strong> <span class='ts'>(2026-08-24 09:07)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£106</strong> <span class='ts'>(2026-08-24 09:13)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£106</strong> <span class='ts'>(2026-08-24 09:31)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£106</strong> <span class='ts'>(2026-08-24 13:16)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£106</strong> <span class='ts'>(2026-08-24 14:26)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£106</strong> <span class='ts'>(2026-08-24 20:00)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£106</strong> <span class='ts'>(2026-08-25 09:10)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£106</strong> <span class='ts'>(2026-08-25 12:48)</span></span></td></tr>
+<tr><td style='white-space: nowrap;'><strong>Sob, 19 Gru</strong></td><td><span class='history-badge badge-neutral'><strong>£142</strong> <span class='ts'>(2026-08-24 09:07)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£142</strong> <span class='ts'>(2026-08-24 09:13)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£142</strong> <span class='ts'>(2026-08-24 09:31)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£142</strong> <span class='ts'>(2026-08-24 13:16)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£142</strong> <span class='ts'>(2026-08-24 14:26)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£142</strong> <span class='ts'>(2026-08-24 20:00)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£142</strong> <span class='ts'>(2026-08-25 09:10)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£142</strong> <span class='ts'>(2026-08-25 12:48)</span></span></td></tr>
+<tr><td style='white-space: nowrap;'><strong>Niedz, 20 Gru</strong></td><td><span class='history-badge badge-neutral'><strong>£124</strong> <span class='ts'>(2026-08-24 09:07)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£124</strong> <span class='ts'>(2026-08-24 09:13)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£124</strong> <span class='ts'>(2026-08-24 09:31)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£124</strong> <span class='ts'>(2026-08-24 13:16)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£124</strong> <span class='ts'>(2026-08-24 14:26)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£124</strong> <span class='ts'>(2026-08-24 20:00)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£124</strong> <span class='ts'>(2026-08-25 09:10)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£124</strong> <span class='ts'>(2026-08-25 12:48)</span></span></td></tr>
+<tr><td style='white-space: nowrap;'><strong>Pon, 21 Gru</strong></td><td><span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-24 09:07)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-24 09:13)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-24 09:31)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-24 13:16)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-24 14:26)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-24 20:00)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-25 09:10)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-25 12:48)</span></span></td></tr>
+<tr><td style='white-space: nowrap;'><strong>Wt, 22 Gru</strong></td><td><span class='history-badge badge-neutral'><strong>£142</strong> <span class='ts'>(2026-08-24 09:07)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£142</strong> <span class='ts'>(2026-08-24 09:13)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£142</strong> <span class='ts'>(2026-08-24 09:31)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£142</strong> <span class='ts'>(2026-08-24 13:16)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£142</strong> <span class='ts'>(2026-08-24 14:26)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£142</strong> <span class='ts'>(2026-08-24 20:00)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£142</strong> <span class='ts'>(2026-08-25 09:10)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£142</strong> <span class='ts'>(2026-08-25 12:48)</span></span></td></tr>
+<tr><td style='white-space: nowrap;'><strong>Śr, 23 Gru</strong></td><td><span class='history-badge badge-neutral'><strong>£152</strong> <span class='ts'>(2026-08-24 09:07)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£152</strong> <span class='ts'>(2026-08-24 09:13)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£152</strong> <span class='ts'>(2026-08-24 09:31)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£152</strong> <span class='ts'>(2026-08-24 13:16)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£152</strong> <span class='ts'>(2026-08-24 14:26)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£152</strong> <span class='ts'>(2026-08-24 20:00)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£152</strong> <span class='ts'>(2026-08-25 09:10)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£152</strong> <span class='ts'>(2026-08-25 12:48)</span></span></td></tr>
+<tr><td style='white-space: nowrap;'><strong>Czw, 24 Gru</strong></td><td><span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-24 09:07)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-24 09:13)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-24 09:31)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-24 13:16)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-24 14:26)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-24 20:00)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-25 09:10)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-25 12:48)</span></span></td></tr>
+
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
     <script>
-        const chartData = {"labels": ["2026-08-24 09:07", "2026-08-24 09:13", "2026-08-24 09:31", "2026-08-24 13:16", "2026-08-24 14:26", "2026-08-24 20:00", "2026-08-25 09:10"], "datasets": [{"label": "2026-12-15", "data": [64, 64, 64, 64, 64, 64, 64], "borderColor": "#007bff", "backgroundColor": "#007bff", "fill": false, "tension": 0.2}, {"label": "2026-12-16", "data": [61, 61, 61, 61, 61, 61, 61], "borderColor": "#28a745", "backgroundColor": "#28a745", "fill": false, "tension": 0.2}, {"label": "2026-12-17", "data": [115, 115, 115, 115, 115, 115, 115], "borderColor": "#dc3545", "backgroundColor": "#dc3545", "fill": false, "tension": 0.2}, {"label": "2026-12-18", "data": [106, 106, 106, 106, 106, 106, 106], "borderColor": "#fd7e14", "backgroundColor": "#fd7e14", "fill": false, "tension": 0.2}, {"label": "2026-12-19", "data": [142, 142, 142, 142, 142, 142, 142], "borderColor": "#6f42c1", "backgroundColor": "#6f42c1", "fill": false, "tension": 0.2}, {"label": "2026-12-20", "data": [124, 124, 124, 124, 124, 124, 124], "borderColor": "#17a2b8", "backgroundColor": "#17a2b8", "fill": false, "tension": 0.2}, {"label": "2026-12-21", "data": [115, 115, 115, 115, 115, 115, 115], "borderColor": "#e83e8c", "backgroundColor": "#e83e8c", "fill": false, "tension": 0.2}, {"label": "2026-12-22", "data": [142, 142, 142, 142, 142, 142, 142], "borderColor": "#6c757d", "backgroundColor": "#6c757d", "fill": false, "tension": 0.2}, {"label": "2026-12-23", "data": [152, 152, 152, 152, 152, 152, 152], "borderColor": "#20c997", "backgroundColor": "#20c997", "fill": false, "tension": 0.2}, {"label": "2026-12-24", "data": [115, 115, 115, 115, 115, 115, 115], "borderColor": "#ffc107", "backgroundColor": "#ffc107", "fill": false, "tension": 0.2}]};
-        const ctx = document.getElementById('priceChart').getContext('2d');
-        new Chart(ctx, {
-            type: 'line',
-            data: chartData,
+        const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const textColor = isDark ? '#94a3b8' : '#64748b';
+        const gridColor = isDark ? '#334155' : '#e2e8f0';
+
+        // Wykres Słupkowy
+        new Chart(document.getElementById('barChart').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: ["Wt, 15 Gru", "\u015ar, 16 Gru", "Czw, 17 Gru", "Pt, 18 Gru", "Sob, 19 Gru", "Niedz, 20 Gru", "Pon, 21 Gru", "Wt, 22 Gru", "\u015ar, 23 Gru", "Czw, 24 Gru"],
+                datasets: [{
+                    label: 'Aktualna cena (£)',
+                    data: [64, 61, 115, 106, 142, 124, 115, 142, 152, 115],
+                    backgroundColor: '#38bdf8',
+                    borderRadius: 6
+                }]
+            },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                    },
-                    tooltip: {
-                        mode: 'index',
-                        intersect: false
-                    }
-                },
+                plugins: { legend: { display: false } },
                 scales: {
-                    y: {
-                        beginAtZero: false,
-                        title: {
-                            display: true,
-                            text: 'Cena (£)'
-                        }
-                    },
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Data sprawdzania'
-                        }
-                    }
+                    y: { grid: { color: gridColor }, ticks: { color: textColor } },
+                    x: { grid: { display: false }, ticks: { color: textColor } }
+                }
+            }
+        });
+
+        // Wykres Liniowy
+        const lineData = {"labels": ["2026-08-24 09:07", "2026-08-24 09:13", "2026-08-24 09:31", "2026-08-24 13:16", "2026-08-24 14:26", "2026-08-24 20:00", "2026-08-25 09:10", "2026-08-25 12:48"], "datasets": [{"label": "Wt, 15 Gru", "data": [64, 64, 64, 64, 64, 64, 64, 64], "borderColor": "#3b82f6", "backgroundColor": "#3b82f6", "fill": false, "tension": 0.2}, {"label": "\u015ar, 16 Gru", "data": [61, 61, 61, 61, 61, 61, 61, 61], "borderColor": "#10b981", "backgroundColor": "#10b981", "fill": false, "tension": 0.2}, {"label": "Czw, 17 Gru", "data": [115, 115, 115, 115, 115, 115, 115, 115], "borderColor": "#ef4444", "backgroundColor": "#ef4444", "fill": false, "tension": 0.2}, {"label": "Pt, 18 Gru", "data": [106, 106, 106, 106, 106, 106, 106, 106], "borderColor": "#f59e0b", "backgroundColor": "#f59e0b", "fill": false, "tension": 0.2}, {"label": "Sob, 19 Gru", "data": [142, 142, 142, 142, 142, 142, 142, 142], "borderColor": "#8b5cf6", "backgroundColor": "#8b5cf6", "fill": false, "tension": 0.2}, {"label": "Niedz, 20 Gru", "data": [124, 124, 124, 124, 124, 124, 124, 124], "borderColor": "#06b6d4", "backgroundColor": "#06b6d4", "fill": false, "tension": 0.2}, {"label": "Pon, 21 Gru", "data": [115, 115, 115, 115, 115, 115, 115, 115], "borderColor": "#ec4899", "backgroundColor": "#ec4899", "fill": false, "tension": 0.2}, {"label": "Wt, 22 Gru", "data": [142, 142, 142, 142, 142, 142, 142, 142], "borderColor": "#6b7280", "backgroundColor": "#6b7280", "fill": false, "tension": 0.2}, {"label": "\u015ar, 23 Gru", "data": [152, 152, 152, 152, 152, 152, 152, 152], "borderColor": "#14b8a6", "backgroundColor": "#14b8a6", "fill": false, "tension": 0.2}, {"label": "Czw, 24 Gru", "data": [115, 115, 115, 115, 115, 115, 115, 115], "borderColor": "#eab308", "backgroundColor": "#eab308", "fill": false, "tension": 0.2}]};
+        new Chart(document.getElementById('lineChart').getContext('2d'), {
+            type: 'line',
+            data: lineData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom', labels: { color: textColor } } },
+                scales: {
+                    y: { grid: { color: gridColor }, ticks: { color: textColor } },
+                    x: { grid: { color: gridColor }, ticks: { color: textColor } }
                 }
             }
         });
