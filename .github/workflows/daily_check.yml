@@ -2,7 +2,9 @@ name: ✈️ Daily Google Flights Price Check
 
 on:
   schedule:
-    - cron: '0 7,12,19 * * *'
+# 09:17 UTC = 10:17 czasu UK (BST)
+    # 19:17 UTC = 20:17 czasu UK (BST)
+    - cron: '17 9,19 * * *'
   workflow_dispatch:
 
 permissions:
