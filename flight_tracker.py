@@ -121,11 +121,13 @@ def save_history(history):
         json.dump(history, f, indent=2, ensure_ascii=False)
 
 def get_last_prices(history):
-    """Pobiera ostatnio zapisane ceny dla porównania zmian."""
-    if not history:
-        return {}
-    last_key = list(history.keys())[-1]
-    return history.get(last_key, {})
+    """Pobiera ostatnio zapisane ceny w starej, poprawnej strukturze listowej."""
+    last_prices = {}
+    for date, records in history.items():
+        if isinstance(records, list) and len(records) > 0:
+            # Pobierz ostatni element z listy pomiarów dla danej daty
+            last_prices[date] = records[-1].get("price")
+    return last_prices
 
 def main():
     print("🚀 Rozpoczynanie sprawdzania cen...", flush=True)
@@ -133,7 +135,6 @@ def main():
     last_prices = get_last_prices(history)
     today_str = datetime.now().strftime("%Y-%m-%d %H:%M")
 
-    current_results = {}
     report_lines = [
         "✈️ Ceny lotów LTN ➔ POZ",
         "📅 15–24 Grudnia 2026\n"
@@ -145,7 +146,6 @@ def main():
         date_formatted = format_date_pl(date)
 
         if price:
-            current_results[date] = price
             prev_price = last_prices.get(date)
 
             # Wyznaczenie wskaźnika i różnicy ceny po prawej stronie
@@ -162,6 +162,16 @@ def main():
 
             time_str = f"({dep_time})" if dep_time else ""
             report_lines.append(f"🗓️ {date_formatted} {time_str}: £{price} {indicator}")
+
+            # ZAPIS DO HISTORII W STAREJ STRUKTURZE (dla strony internetowej)
+            if date not in history or not isinstance(history[date], list):
+                history[date] = []
+            
+            history[date].append({
+                "timestamp": today_str,
+                "price": price
+            })
+
         else:
             report_lines.append(f"🗓️ {date_formatted}: Brak lotu Wizz Air")
 
@@ -170,7 +180,6 @@ def main():
     report_lines.append("https://Kuba911-hue.github.io/wizz-fly-hunter/")
 
     # Zapis w historii
-    history[today_str] = current_results
     save_history(history)
 
     # Wysyłka wiadomości
