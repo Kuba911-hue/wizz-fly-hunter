@@ -14,14 +14,7 @@ SITE_URL = f"https://{GITHUB_USER}.github.io/{GITHUB_REPO}/"
 
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
-
-# --- ZMIANA 1: Zamiast jednego klucza pobieramy oba do listy ---
-SERP_KEYS = [
-    os.environ.get("SERPAPI_KEY"),
-    os.environ.get("SERPAPI_KEY_2")
-]
-# Pozbywamy się pustych wartości, jeśli któregoś brakuje
-SERP_KEYS = [key for key in SERP_KEYS if key]
+SERP_KEY = os.environ.get("SERPAPI_KEY")
 
 HISTORY_FILE = "history.json"
 
@@ -51,8 +44,8 @@ def save_history(history):
         json.dump(history, f, ensure_ascii=False, indent=2)
 
 def get_december_flights():
-    if not SERP_KEYS:
-        return "⚠️ Błąd: Brak kluczy SERPAPI_KEY.", [], {}
+    if not SERP_KEY:
+        return "⚠️ Błąd: Brak klucza SERPAPI_KEY.", [], {}
 
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
     history = load_history()
@@ -73,93 +66,79 @@ def get_december_flights():
             "outbound_date": date_str,
             "currency": "GBP",
             "hl": "pl",
-            "type": "2"
+            "type": "2",
+            "api_key": SERP_KEY
         }
 
-        flights = []
-        
-        # --- ZMIANA 2: Rotacja kluczy ---
-        for key in SERP_KEYS:
-            params["api_key"] = key
-            try:
-                search = GoogleSearch(params)
-                results = search.get_dict()
-                
-                # Jeśli SerpAPI zwraca błąd (np. brak kredytów), drukujemy go w logach i idziemy do kolejnego klucza
-                if "error" in results:
-                    print(f"Odrzucono klucz dla daty {date_str}. Błąd SerpAPI: {results['error']}")
-                    continue
-                    
-                # Jeśli przeszło bez błędu, pobieramy loty i uciekamy z pętli kluczy
-                flights = results.get("best_flights", []) + results.get("other_flights", [])
-                break
-                
-            except Exception as e:
-                print(f"Błąd połączenia dla daty {date_str}: {e}")
-                continue
-        # --- KONIEC ZMIAN ---
-        
-        day_flight_found = False
-        for flight in flights:
-            flight_details = flight.get("flights", [{}])[0]
-            airline = flight_details.get("airline", "")
+        try:
+            search = GoogleSearch(params)
+            results = search.get_dict()
+            flights = results.get("best_flights", []) + results.get("other_flights", [])
             
-            if "Wizz" in airline:
-                price = flight.get("price", "N/A")
-                dep_time = flight_details.get("departure_airport", {}).get("time", "").split(" ")[-1]
+            day_flight_found = False
+            for flight in flights:
+                flight_details = flight.get("flights", [{}])[0]
+                airline = flight_details.get("airline", "")
                 
-                trend = "🆕"
-                trend_html = "<span class='badge bg-secondary'>🆕 Nowy</span>"
-                row_bg = ""
+                if "Wizz" in airline:
+                    price = flight.get("price", "N/A")
+                    dep_time = flight_details.get("departure_airport", {}).get("time", "").split(" ")[-1]
+                    
+                    trend = "🆕"
+                    trend_html = "<span class='badge bg-secondary'>🆕 Nowy</span>"
+                    row_bg = ""
 
-                if date_str in history and len(history[date_str]) > 0:
-                    last_price = history[date_str][-1]["price"]
-                    if isinstance(price, int) and isinstance(last_price, int):
-                        diff = price - last_price
-                        if diff < 0:
-                            trend = f"🟢 ↓ (-£{abs(diff)})"
-                            trend_html = f"<span class='badge bg-success'>🟢 ↓ (-£{abs(diff)})</span>"
-                            row_bg = "table-success-custom"
-                        elif diff > 0:
-                            trend = f"🔴 ↑ (+£{diff})"
-                            trend_html = f"<span class='badge bg-danger'>🔴 ↑ (+£{diff})</span>"
-                            row_bg = "table-danger-custom"
-                        else:
-                            trend = "⚪ ="
-                            trend_html = "<span class='badge bg-secondary'>⚪ Bez zmian</span>"
+                    if date_str in history and len(history[date_str]) > 0:
+                        last_price = history[date_str][-1]["price"]
+                        if isinstance(price, int) and isinstance(last_price, int):
+                            diff = price - last_price
+                            if diff < 0:
+                                trend = f"🟢 ↓ (-£{abs(diff)})"
+                                trend_html = f"<span class='badge bg-success'>🟢 ↓ (-£{abs(diff)})</span>"
+                                row_bg = "table-success-custom"
+                            elif diff > 0:
+                                trend = f"🔴 ↑ (+£{diff})"
+                                trend_html = f"<span class='badge bg-danger'>🔴 ↑ (+£{diff})</span>"
+                                row_bg = "table-danger-custom"
+                            else:
+                                trend = "⚪ ="
+                                trend_html = "<span class='badge bg-secondary'>⚪ Bez zmian</span>"
 
-                msg += f"📅 {formatted_date} ({dep_time}): £{price} {trend}\n"
-                
+                    msg += f"📅 {formatted_date} ({dep_time}): £{price} {trend}\n"
+                    
+                    current_data.append({
+                        "date": date_str,
+                        "formatted_date": formatted_date,
+                        "time": dep_time,
+                        "airline": "Wizz Air",
+                        "price": price,
+                        "trend_html": trend_html,
+                        "row_bg": row_bg
+                    })
+                    
+                    if date_str not in history:
+                        history[date_str] = []
+                    history[date_str].append({"timestamp": timestamp, "price": price})
+
+                    day_flight_found = True
+                    break
+            
+            if not day_flight_found:
+                msg += f"📅 {formatted_date}: Brak lotu Wizz Air\n"
                 current_data.append({
                     "date": date_str,
                     "formatted_date": formatted_date,
-                    "time": dep_time,
-                    "airline": "Wizz Air",
-                    "price": price,
-                    "trend_html": trend_html,
-                    "row_bg": row_bg
+                    "time": "-",
+                    "airline": "-",
+                    "price": "Brak",
+                    "trend_html": "-",
+                    "row_bg": ""
                 })
-                
-                if date_str not in history:
-                    history[date_str] = []
-                history[date_str].append({"timestamp": timestamp, "price": price})
 
-                day_flight_found = True
-                break
-        
-        if not day_flight_found:
-            msg += f"📅 {formatted_date}: Brak lotu Wizz Air\n"
-            current_data.append({
-                "date": date_str,
-                "formatted_date": formatted_date,
-                "time": "-",
-                "airline": "-",
-                "price": "Brak",
-                "trend_html": "-",
-                "row_bg": ""
-            })
+            time.sleep(0.5)
 
-        time.sleep(0.5)
+        except Exception as e:
+            print(f"Błąd dla daty {date_str}: {e}")
 
     save_history(history)
     msg += f"\n🌐 Pełny dashboard i wykresy:\n{SITE_URL}"
