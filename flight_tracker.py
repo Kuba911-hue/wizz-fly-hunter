@@ -3,6 +3,7 @@ import requests
 import time
 import json
 from datetime import datetime
+from serpapi import GoogleSearch
 
 ORIGIN = "LTN"
 DESTINATION = "POZ"
@@ -14,11 +15,12 @@ SITE_URL = f"https://{GITHUB_USER}.github.io/{GITHUB_REPO}/"
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
-# Pobieranie obu kluczy
+# --- ZMIANA 1: Zamiast jednego klucza pobieramy oba do listy ---
 SERP_KEYS = [
     os.environ.get("SERPAPI_KEY"),
     os.environ.get("SERPAPI_KEY_2")
 ]
+# Pozbywamy się pustych wartości, jeśli któregoś brakuje
 SERP_KEYS = [key for key in SERP_KEYS if key]
 
 HISTORY_FILE = "history.json"
@@ -50,7 +52,7 @@ def save_history(history):
 
 def get_december_flights():
     if not SERP_KEYS:
-        return "⚠️ Błąd krytyczny: Brak jakichkolwiek kluczy SERPAPI w Secrets.", [], {}
+        return "⚠️ Błąd: Brak kluczy SERPAPI_KEY.", [], {}
 
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
     history = load_history()
@@ -74,46 +76,29 @@ def get_december_flights():
             "type": "2"
         }
 
-        search_successful = False
         flights = []
         
-        # Rotacja kluczy - z użyciem czystego API, które jest niezawodne
-        for index, current_key in enumerate(SERP_KEYS):
-            params["api_key"] = current_key
+        # --- ZMIANA 2: Rotacja kluczy ---
+        for key in SERP_KEYS:
+            params["api_key"] = key
             try:
-                response = requests.get("https://serpapi.com/search", params=params)
-                results = response.json()
+                search = GoogleSearch(params)
+                results = search.get_dict()
                 
-                # Sprawdzamy czy API zgłosiło błąd (np. brak kredytów)
+                # Jeśli SerpAPI zwraca błąd (np. brak kredytów), drukujemy go w logach i idziemy do kolejnego klucza
                 if "error" in results:
-                    print(f"⚠️ Klucz #{index + 1} zwrócił błąd: {results['error']}")
+                    print(f"Odrzucono klucz dla daty {date_str}. Błąd SerpAPI: {results['error']}")
                     continue
-                
-                # Sukces - pobieramy loty i przerywamy pętlę kluczy
+                    
+                # Jeśli przeszło bez błędu, pobieramy loty i uciekamy z pętli kluczy
                 flights = results.get("best_flights", []) + results.get("other_flights", [])
-                search_successful = True
                 break
                 
             except Exception as e:
-                print(f"❌ Błąd połączenia na kluczu #{index + 1}: {e}")
+                print(f"Błąd połączenia dla daty {date_str}: {e}")
                 continue
-
-        # CO JEŚLI WSZYSTKIE KLUCZE ZAWODZĄ?
-        if not search_successful:
-            msg += f"📅 {formatted_date}: ⚠️ Błąd API (Limit wyczerpany)\n"
-            current_data.append({
-                "date": date_str,
-                "formatted_date": formatted_date,
-                "time": "-",
-                "airline": "-",
-                "price": "Błąd API",
-                "trend_html": "<span class='badge bg-danger'>API OFF</span>",
-                "row_bg": "table-danger-custom"
-            })
-            time.sleep(0.5)
-            continue # Przechodzimy do następnego dnia
-
-        # Jeśli pobieranie danych się udało:
+        # --- KONIEC ZMIAN ---
+        
         day_flight_found = False
         for flight in flights:
             flight_details = flight.get("flights", [{}])[0]
@@ -328,152 +313,157 @@ def generate_html(current_data, history):
 
         .history-badge {{ display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.85em; border: 1px solid var(--border-color); }}
         .badge-neutral {{ background: rgba(255,255,255,0.05); }}
-        .badge-down {{ background: var(--success-bg); border-color: #10b981; }}
-        .badge-up {{ background: var(--danger-bg); border-color: #ef4444; }}
-        .ts {{ font-size: 0.8em; color: var(--text-muted); opacity: 0.8; }}
+        .badge-down {{ background: var(--success-bg); color: #10b981; border-color: #10b981; }}
+        .badge-up {{ background: var(--danger-bg); color: #ef4444; border-color: #ef4444; }}
+        .history-badge .ts {{ font-size: 0.75em; opacity: 0.7; }}
 
-        .chart-container {{ position: relative; height: 350px; width: 100%; margin-top: 15px; }}
-
-        .footer {{ text-align: center; margin-top: 30px; color: var(--text-muted); font-size: 0.8em; opacity: 0.7; }}
+        .chart-container {{ position: relative; height: 320px; width: 100%; }}
+        .table-responsive {{ overflow-x: auto; }}
     </style>
 </head>
 <body>
-
-<div class="container">
-    <div class="card" style="text-align: center;">
-        <h2 style="margin:0; font-size: 1.8em;">✈️ WizzAir Radar: LTN ➔ POZ</h2>
-        <p style="margin:5px 0 0 0; color: var(--text-muted);">Okres: 15–24 Grudnia 2026 | Ostatnia aktualizacja: {now}</p>
-    </div>
-
-    <div class="deal-banner">
-        <div class="deal-card">
-            <h4>Złoty Strzał 🎯</h4>
-            <div class="val">{best_deal_text}</div>
+    <div class="container">
+        <div class="card">
+            <h2>✈️ WizzAir Radar: Luton (LTN) ➔ Poznań (POZ)</h2>
+            <p class="text-muted" style="margin:0;">Monitoring cen na okres: <strong>15–24 Grudnia 2026</strong></p>
         </div>
-        <div class="deal-card">
-            <h4>Średnia Cena Okresu ⚖️</h4>
-            <div class="val">£{avg_price}</div>
+
+        <div class="deal-banner">
+            <div class="deal-card">
+                <h4>🔥 Najtańsza opcja</h4>
+                <div class="val" style="color: #10b981;">{best_deal_text}</div>
+            </div>
+            <div class="deal-card">
+                <h4>📊 Średnia cena okresu</h4>
+                <div class="val">£{avg_price}</div>
+            </div>
+            <div class="deal-card">
+                <h4>🔄 Ostatni odczyt</h4>
+                <div class="val" style="font-size: 1.1em; line-height: 2.2;">{now.split()[1]} UTC</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>📊 Porównanie cen dzisiejszych</h3>
+            <div class="chart-container">
+                <canvas id="barChart"></canvas>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>📈 Historia zmian w czasie</h3>
+            <div class="chart-container">
+                <canvas id="lineChart"></canvas>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>📋 Aktualne zestawienie</h3>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Godz.</th>
+                            <th>Cena</th>
+                            <th>Min. hist.</th>
+                            <th>Zmiana</th>
+                            <th>Rekomendacja</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {current_rows}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>📜 Chronologiczny zapis pomiarów</h3>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Data lotu</th>
+                            <th>Przebieg cenowy</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {history_rows}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
-    <div class="card">
-        <h3>📊 Najnowsze odczyty</h3>
-        <div style="overflow-x:auto;">
-            <table>
-                <tr>
-                    <th>Data lotu</th>
-                    <th>Godzina</th>
-                    <th>Obecna Cena</th>
-                    <th>Hist. Min</th>
-                    <th>Trend (ostatni skan)</th>
-                    <th>Rekomendacja</th>
-                </tr>
-                {current_rows}
-            </table>
-        </div>
-    </div>
+    <script>
+        const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const textColor = isDark ? '#94a3b8' : '#64748b';
+        const gridColor = isDark ? '#334155' : '#e2e8f0';
 
-    <div class="card">
-        <h3>📉 Wizualizacja trendów (porównanie po datach skanowania)</h3>
-        <div class="chart-container">
-            <canvas id="trendChart"></canvas>
-        </div>
-    </div>
-
-    <div class="card">
-        <h3>📊 Zestawienie obecnych cen w grudniu</h3>
-        <div class="chart-container" style="height: 250px;">
-            <canvas id="barChart"></canvas>
-        </div>
-    </div>
-
-    <div class="card">
-        <h3>📜 Historia zmian cen (Timeline)</h3>
-        <div style="overflow-x:auto;">
-            <table>
-                <tr>
-                    <th style="width: 120px;">Data lotu</th>
-                    <th>Historia pomiarów (od najstarszego)</th>
-                </tr>
-                {history_rows}
-            </table>
-        </div>
-    </div>
-    
-    <div class="footer">
-        Coded by Jakub Wulczyński | Wizz-Fly-Hunter 2026
-    </div>
-</div>
-
-<script>
-    const chartData = {json.dumps(chart_config)};
-    
-    const ctx = document.getElementById('trendChart').getContext('2d');
-    new Chart(ctx, {{
-        type: 'line',
-        data: chartData,
-        options: {{
-            responsive: true,
-            maintainAspectRatio: false,
-            interaction: {{ mode: 'index', intersect: false }},
-            plugins: {{
-                legend: {{ position: 'right', labels: {{ color: getComputedStyle(document.body).getPropertyValue('--text-color') }} }}
+        // Wykres Słupkowy
+        new Chart(document.getElementById('barChart').getContext('2d'), {{
+            type: 'bar',
+            data: {{
+                labels: {json.dumps(bar_labels)},
+                datasets: [{{
+                    label: 'Aktualna cena (£)',
+                    data: {json.dumps(bar_values)},
+                    backgroundColor: '#38bdf8',
+                    borderRadius: 6
+                }}]
             }},
-            scales: {{
-                x: {{ ticks: {{ color: '#94a3b8', maxRotation: 45, minRotation: 45 }} }},
-                y: {{ title: {{ display: true, text: 'Cena w GBP (£)' }}, ticks: {{ color: '#94a3b8' }} }}
+            options: {{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {{ legend: {{ display: false }} }},
+                scales: {{
+                    y: {{ grid: {{ color: gridColor }}, ticks: {{ color: textColor }} }},
+                    x: {{ grid: {{ display: false }}, ticks: {{ color: textColor }} }}
+                }}
             }}
-        }}
-    }});
+        }});
 
-    const barCtx = document.getElementById('barChart').getContext('2d');
-    new Chart(barCtx, {{
-        type: 'bar',
-        data: {{
-            labels: {json.dumps(bar_labels)},
-            datasets: [{{
-                label: 'Obecna cena (£)',
-                data: {json.dumps(bar_values)},
-                backgroundColor: 'rgba(56, 189, 248, 0.6)',
-                borderColor: '#38bdf8',
-                borderWidth: 1,
-                borderRadius: 4
-            }}]
-        }},
-        options: {{
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {{ legend: {{ display: false }} }},
-            scales: {{
-                x: {{ ticks: {{ color: '#94a3b8' }} }},
-                y: {{ ticks: {{ color: '#94a3b8' }} }}
+        // Wykres Liniowy
+        const lineData = {json.dumps(chart_config)};
+        new Chart(document.getElementById('lineChart').getContext('2d'), {{
+            type: 'line',
+            data: lineData,
+            options: {{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {{ legend: {{ position: 'bottom', labels: {{ color: textColor }} }} }},
+                scales: {{
+                    y: {{ grid: {{ color: gridColor }}, ticks: {{ color: textColor }} }},
+                    x: {{ grid: {{ color: gridColor }}, ticks: {{ color: textColor }} }}
+                }}
             }}
-        }}
-    }});
-</script>
+        }});
+    </script>
 </body>
 </html>"""
-    
+
     with open("index.html", "w", encoding="utf-8") as f:
         f.write(html_content)
 
-def send_telegram_message(message):
-    if TELEGRAM_TOKEN and TELEGRAM_CHAT_ID:
-        url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-        payload = {
-            "chat_id": TELEGRAM_CHAT_ID,
-            "text": message,
-            "disable_web_page_preview": True
-        }
-        try:
-            requests.post(url, json=payload)
-        except Exception as e:
-            print(f"Błąd wysyłania Telegram: {e}")
-    else:
-        print("Brak tokenu/ID Telegrama. Wiadomość:")
-        print(message)
+def send_telegram(text):
+    if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
+        print("⚠️ Brak TOKENA lub CHAT_ID Telegrama")
+        return
+    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+    payload = {
+        "chat_id": TELEGRAM_CHAT_ID, 
+        "text": text,
+        "disable_web_page_preview": False
+    }
+    response = requests.post(url, json=payload)
+    if response.status_code != 200:
+        print(f"⚠️ Błąd wysyłania Telegram: {response.status_code} - {response.text}")
+
+def main():
+    report, current_data, history = get_december_flights()
+    generate_html(current_data, history)
+    send_telegram(report)
 
 if __name__ == "__main__":
-    msg, current_data, history = get_december_flights()
-    generate_html(current_data, history)
-    send_telegram_message(msg)
+    main()
