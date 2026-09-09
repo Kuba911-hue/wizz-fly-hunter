@@ -1,10 +1,10 @@
-name: ✈️ Daily Google Flights Price Check
+name: Daily Google Flights Price Check
 
 on:
   schedule:
-# 09:17 UTC = 10:17 czasu UK (BST)
-    # 19:17 UTC = 20:17 czasu UK (BST)
-    - cron: '17 9 * * 1,3,5'
+    # 09:17 UTC = 10:17 czasem UK
+    # 19:17 UTC = 20:17 czasem UK
+    - cron: '17 9,19 * * *'
   workflow_dispatch:
 
 permissions:
@@ -13,6 +13,7 @@ permissions:
 jobs:
   run-bot:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout kodu
         uses: actions/checkout@v4
@@ -25,26 +26,18 @@ jobs:
       - name: Instalacja bibliotek
         run: pip install -r requirements.txt
 
-     - name: Uruchomienie bota
-  env:
-    TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-    TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-    SERPAPI_KEY: ${{ secrets.SERPAPI_KEY }}
-    HASDATA_KEY: ${{ secrets.HASDATA_KEY }}
-  run: python flight_tracker.py
-
+      - name: Uruchomienie bota
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SERPAPI_KEY: ${{ secrets.SERPAPI_KEY }}
+          HASDATA_KEY: ${{ secrets.HASDATA_KEY }}
+        run: python flight_tracker.py
 
       - name: Zapis historii cen w repozytorium
         run: |
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git add history.json index.html
-          git commit -m "Update price history and webpage [skip ci]" || exit 0
-          git pull --rebase origin main
-          git push origin main
-
-      - name: Publikacja na GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: .
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add history.json index.html || true
+          git commit -m "auto: aktualizacja historii cen lotow" || true
+          git push
