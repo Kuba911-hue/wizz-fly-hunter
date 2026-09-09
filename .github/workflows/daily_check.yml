@@ -26,12 +26,12 @@ jobs:
       - name: Instalacja bibliotek
         run: pip install -r requirements.txt
 
-      - name: Uruchomienie bota
+            - name: Uruchomienie bota
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           SERPAPI_KEY: ${{ secrets.SERPAPI_KEY }}
-          HASDATA_KEY: ${{ secrets.HASDATA_KEY }}
+          SERPAPI_KEY_2: ${{ secrets.SERPAPI_KEY_2 }}
         run: python flight_tracker.py
 
       - name: Zapis historii cen w repozytorium
