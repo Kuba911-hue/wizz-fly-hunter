@@ -1,14 +1,21 @@
-name: ✈️ Daily Google Flights Price Check
+name: Daily Google Flights Price Check
 
 on:
   schedule:
-    # 09:17 UTC = 10:17 czasu UK (BST)
-    # 19:17 UTC = 20:17 czasu UK (BST)
-    - cron: '17 9,19 * * *'
-  workflow_dispatch:
+    # Uruchamianie automatyczne (np. codziennie o 09:00 UTC)
+    - cron: '0 9 * * *'
+  workflow_dispatch: # Pozwala na ręczne uruchomienie w zakładce Actions
 
+# Uprawnienia potrzebne do zapisu w repozytorium oraz publikacji na GitHub Pages
 permissions:
   contents: write
+  pages: write
+  id-token: write
+
+# Zapobiega nakładaniu się wielu wdrożeń strony jednocześnie
+concurrency:
+  group: 'pages'
+  cancel-in-progress: true
 
 jobs:
   run-bot:
@@ -23,22 +30,31 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Instalacja bibliotek
-        run: pip install -r requirements.txt
+      - name: Instalacja zależności
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
       - name: Uruchomienie bota
         env:
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           SERPAPI_KEY: ${{ secrets.SERPAPI_KEY }}
           SERPAPI_KEY_2: ${{ secrets.SERPAPI_KEY_2 }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: python flight_tracker.py
 
       - name: Zapis historii cen w repozytorium
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add history.json index.html || true
-          git commit -m "auto: aktualizacja historii cen lotow" || true
-          git pull --rebase
+          git add history.json
+          git commit -m "auto: aktualizacja historii cen lotow" || echo "Brak zmian do skomitowania"
           git push
+
+      - name: Przygotowanie plików dla GitHub Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+      - name: Publikacja strony na GitHub Pages
+        uses: actions/deploy-pages@v4
