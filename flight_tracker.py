@@ -13,7 +13,7 @@ SERPAPI_KEYS = [
     os.getenv("SERPAPI_KEY"),
     os.getenv("SERPAPI_KEY_2")
 ]
-# Filtrujemy puste klucze
+# Filtrowanie pustych kluczy
 SERPAPI_KEYS = [k for k in SERPAPI_KEYS if k]
 
 # Konfiguracja wyszukiwania (LTN -> POZ)
@@ -34,6 +34,7 @@ def get_flights_for_date(date):
                 "departure_id": DEPARTURE_ID,
                 "arrival_id": ARRIVAL_ID,
                 "outbound_date": date,
+                "type": "2",  # 2 oznacza lot w jedną stronę (One way)
                 "currency": "GBP",
                 "hl": "pl",
                 "api_key": key
@@ -46,7 +47,7 @@ def get_flights_for_date(date):
                 err_msg = str(results["error"])
                 if "run out of searches" in err_msg.lower():
                     print(f"⚠️ Klucz SerpApi #{idx} wyczerpany dla daty {date}. Przełączam na kolejny...", flush=True)
-                    continue  # Przejdź do kolejnego klucza w pętli
+                    continue  # Przejście do kolejnego klucza
                 else:
                     print(f"⚠️ Błąd SerpApi #{idx} ({date}): {err_msg}", flush=True)
                     return None
