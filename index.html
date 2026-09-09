@@ -58,93 +58,84 @@
 
         .history-badge { display: inline-block; padding: 4px 8px; margin: 2px; border-radius: 6px; font-size: 0.85em; border: 1px solid var(--border-color); }
         .badge-neutral { background: rgba(255,255,255,0.05); }
-        .badge-down { background: var(--success-bg); color: #10b981; border-color: #10b981; }
-        .badge-up { background: var(--danger-bg); color: #ef4444; border-color: #ef4444; }
-        .history-badge .ts { font-size: 0.75em; opacity: 0.7; }
+        .badge-down { background: var(--success-bg); border-color: #10b981; }
+        .badge-up { background: var(--danger-bg); border-color: #ef4444; }
+        .ts { font-size: 0.8em; color: var(--text-muted); opacity: 0.8; }
 
-        .chart-container { position: relative; height: 320px; width: 100%; }
-        .table-responsive { overflow-x: auto; }
+        .chart-container { position: relative; height: 350px; width: 100%; margin-top: 15px; }
+
+        .footer { text-align: center; margin-top: 30px; color: var(--text-muted); font-size: 0.8em; opacity: 0.7; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="card">
-            <h2>✈️ WizzAir Radar: Luton (LTN) ➔ Poznań (POZ)</h2>
-            <p class="text-muted" style="margin:0;">Monitoring cen na okres: <strong>15–24 Grudnia 2026</strong></p>
+
+<div class="container">
+    <div class="card" style="text-align: center;">
+        <h2 style="margin:0; font-size: 1.8em;">✈️ WizzAir Radar: LTN ➔ POZ</h2>
+        <p style="margin:5px 0 0 0; color: var(--text-muted);">Okres: 15–24 Grudnia 2026 | Ostatnia aktualizacja: 2026-09-09 11:42:39</p>
+    </div>
+
+    <div class="deal-banner">
+        <div class="deal-card">
+            <h4>Złoty Strzał 🎯</h4>
+            <div class="val">Brak</div>
         </div>
-
-        <div class="deal-banner">
-            <div class="deal-card">
-                <h4>🔥 Najtańsza opcja</h4>
-                <div class="val" style="color: #10b981;">Brak</div>
-            </div>
-            <div class="deal-card">
-                <h4>📊 Średnia cena okresu</h4>
-                <div class="val">£0</div>
-            </div>
-            <div class="deal-card">
-                <h4>🔄 Ostatni odczyt</h4>
-                <div class="val" style="font-size: 1.1em; line-height: 2.2;">11:38:16 UTC</div>
-            </div>
+        <div class="deal-card">
+            <h4>Średnia Cena Okresu ⚖️</h4>
+            <div class="val">£0</div>
         </div>
+    </div>
 
-        <div class="card">
-            <h3>📊 Porównanie cen dzisiejszych</h3>
-            <div class="chart-container">
-                <canvas id="barChart"></canvas>
-            </div>
+    <div class="card">
+        <h3>📊 Najnowsze odczyty</h3>
+        <div style="overflow-x:auto;">
+            <table>
+                <tr>
+                    <th>Data lotu</th>
+                    <th>Godzina</th>
+                    <th>Obecna Cena</th>
+                    <th>Hist. Min</th>
+                    <th>Trend (ostatni skan)</th>
+                    <th>Rekomendacja</th>
+                </tr>
+                <tr class='table-danger-custom'><td><strong>Wt, 15 Gru</strong></td><td>-</td><td><strong>Błąd API</strong></td><td><small class='text-muted'>£55</small></td><td><span class='badge bg-danger'>API OFF</span></td><td><span class='badge bg-secondary'>Brak danych</span></td></tr>
+<tr class='table-danger-custom'><td><strong>Śr, 16 Gru</strong></td><td>-</td><td><strong>Błąd API</strong></td><td><small class='text-muted'>£55</small></td><td><span class='badge bg-danger'>API OFF</span></td><td><span class='badge bg-secondary'>Brak danych</span></td></tr>
+<tr class='table-danger-custom'><td><strong>Czw, 17 Gru</strong></td><td>-</td><td><strong>Błąd API</strong></td><td><small class='text-muted'>£64</small></td><td><span class='badge bg-danger'>API OFF</span></td><td><span class='badge bg-secondary'>Brak danych</span></td></tr>
+<tr class='table-danger-custom'><td><strong>Pt, 18 Gru</strong></td><td>-</td><td><strong>Błąd API</strong></td><td><small class='text-muted'>£106</small></td><td><span class='badge bg-danger'>API OFF</span></td><td><span class='badge bg-secondary'>Brak danych</span></td></tr>
+<tr class='table-danger-custom'><td><strong>Sob, 19 Gru</strong></td><td>-</td><td><strong>Błąd API</strong></td><td><small class='text-muted'>£142</small></td><td><span class='badge bg-danger'>API OFF</span></td><td><span class='badge bg-secondary'>Brak danych</span></td></tr>
+<tr class='table-danger-custom'><td><strong>Niedz, 20 Gru</strong></td><td>-</td><td><strong>Błąd API</strong></td><td><small class='text-muted'>£115</small></td><td><span class='badge bg-danger'>API OFF</span></td><td><span class='badge bg-secondary'>Brak danych</span></td></tr>
+<tr class='table-danger-custom'><td><strong>Pon, 21 Gru</strong></td><td>-</td><td><strong>Błąd API</strong></td><td><small class='text-muted'>£106</small></td><td><span class='badge bg-danger'>API OFF</span></td><td><span class='badge bg-secondary'>Brak danych</span></td></tr>
+<tr class='table-danger-custom'><td><strong>Wt, 22 Gru</strong></td><td>-</td><td><strong>Błąd API</strong></td><td><small class='text-muted'>£133</small></td><td><span class='badge bg-danger'>API OFF</span></td><td><span class='badge bg-secondary'>Brak danych</span></td></tr>
+<tr class='table-danger-custom'><td><strong>Śr, 23 Gru</strong></td><td>-</td><td><strong>Błąd API</strong></td><td><small class='text-muted'>£142</small></td><td><span class='badge bg-danger'>API OFF</span></td><td><span class='badge bg-secondary'>Brak danych</span></td></tr>
+<tr class='table-danger-custom'><td><strong>Czw, 24 Gru</strong></td><td>-</td><td><strong>Błąd API</strong></td><td><small class='text-muted'>£115</small></td><td><span class='badge bg-danger'>API OFF</span></td><td><span class='badge bg-secondary'>Brak danych</span></td></tr>
+
+            </table>
         </div>
+    </div>
 
-        <div class="card">
-            <h3>📈 Historia zmian w czasie</h3>
-            <div class="chart-container">
-                <canvas id="lineChart"></canvas>
-            </div>
+    <div class="card">
+        <h3>📉 Wizualizacja trendów (porównanie po datach skanowania)</h3>
+        <div class="chart-container">
+            <canvas id="trendChart"></canvas>
         </div>
+    </div>
 
-        <div class="card">
-            <h3>📋 Aktualne zestawienie</h3>
-            <div class="table-responsive">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Data</th>
-                            <th>Godz.</th>
-                            <th>Cena</th>
-                            <th>Min. hist.</th>
-                            <th>Zmiana</th>
-                            <th>Rekomendacja</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr class=''><td><strong>Wt, 15 Gru</strong></td><td>-</td><td><strong>Brak</strong></td><td><small class='text-muted'>£55</small></td><td>-</td><td><span class='badge bg-secondary'>Brak danych</span></td></tr>
-<tr class=''><td><strong>Śr, 16 Gru</strong></td><td>-</td><td><strong>Brak</strong></td><td><small class='text-muted'>£55</small></td><td>-</td><td><span class='badge bg-secondary'>Brak danych</span></td></tr>
-<tr class=''><td><strong>Czw, 17 Gru</strong></td><td>-</td><td><strong>Brak</strong></td><td><small class='text-muted'>£64</small></td><td>-</td><td><span class='badge bg-secondary'>Brak danych</span></td></tr>
-<tr class=''><td><strong>Pt, 18 Gru</strong></td><td>-</td><td><strong>Brak</strong></td><td><small class='text-muted'>£106</small></td><td>-</td><td><span class='badge bg-secondary'>Brak danych</span></td></tr>
-<tr class=''><td><strong>Sob, 19 Gru</strong></td><td>-</td><td><strong>Brak</strong></td><td><small class='text-muted'>£142</small></td><td>-</td><td><span class='badge bg-secondary'>Brak danych</span></td></tr>
-<tr class=''><td><strong>Niedz, 20 Gru</strong></td><td>-</td><td><strong>Brak</strong></td><td><small class='text-muted'>£115</small></td><td>-</td><td><span class='badge bg-secondary'>Brak danych</span></td></tr>
-<tr class=''><td><strong>Pon, 21 Gru</strong></td><td>-</td><td><strong>Brak</strong></td><td><small class='text-muted'>£106</small></td><td>-</td><td><span class='badge bg-secondary'>Brak danych</span></td></tr>
-<tr class=''><td><strong>Wt, 22 Gru</strong></td><td>-</td><td><strong>Brak</strong></td><td><small class='text-muted'>£133</small></td><td>-</td><td><span class='badge bg-secondary'>Brak danych</span></td></tr>
-<tr class=''><td><strong>Śr, 23 Gru</strong></td><td>-</td><td><strong>Brak</strong></td><td><small class='text-muted'>£142</small></td><td>-</td><td><span class='badge bg-secondary'>Brak danych</span></td></tr>
-<tr class=''><td><strong>Czw, 24 Gru</strong></td><td>-</td><td><strong>Brak</strong></td><td><small class='text-muted'>£115</small></td><td>-</td><td><span class='badge bg-secondary'>Brak danych</span></td></tr>
-
-                    </tbody>
-                </table>
-            </div>
+    <div class="card">
+        <h3>📊 Zestawienie obecnych cen w grudniu</h3>
+        <div class="chart-container" style="height: 250px;">
+            <canvas id="barChart"></canvas>
         </div>
+    </div>
 
-        <div class="card">
-            <h3>📜 Chronologiczny zapis pomiarów</h3>
-            <div class="table-responsive">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Data lotu</th>
-                            <th>Przebieg cenowy</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr><td style='white-space: nowrap;'><strong>Wt, 15 Gru</strong></td><td><span class='history-badge badge-neutral'><strong>£64</strong> <span class='ts'>(2026-08-24 09:07)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£64</strong> <span class='ts'>(2026-08-24 09:13)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£64</strong> <span class='ts'>(2026-08-24 09:31)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£64</strong> <span class='ts'>(2026-08-24 13:16)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£64</strong> <span class='ts'>(2026-08-24 14:26)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£64</strong> <span class='ts'>(2026-08-24 20:00)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£64</strong> <span class='ts'>(2026-08-25 09:10)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£64</strong> <span class='ts'>(2026-08-25 12:48)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£64</strong> <span class='ts'>(2026-08-25 14:28)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£64</strong> <span class='ts'>(2026-08-25 19:59)</span></span> ➔ <span class='history-badge badge-down'><strong>£61</strong> <small>(↓£3)</small> <span class='ts'>(2026-08-26 09:24)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-08-26 14:27)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-08-27 07:57)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-08-27 18:36)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-08-28 08:48)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-08-28 21:51)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-08-29 09:23)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-08-29 19:22)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-08-30 09:23)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-08-30 19:22)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-08-31 09:23)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-08-31 19:22)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-09-01 09:29)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-09-01 19:25)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-09-02 09:25)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-09-04 09:25)</span></span> ➔ <span class='history-badge badge-down'><strong>£55</strong> <small>(↓£6)</small> <span class='ts'>(2026-09-09 10:39)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£55</strong> <span class='ts'>(2026-09-09 10:51)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£55</strong> <span class='ts'>(2026-09-09 11:10)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£55</strong> <span class='ts'>(2026-09-09 11:24)</span></span></td></tr>
+    <div class="card">
+        <h3>📜 Historia zmian cen (Timeline)</h3>
+        <div style="overflow-x:auto;">
+            <table>
+                <tr>
+                    <th style="width: 120px;">Data lotu</th>
+                    <th>Historia pomiarów (od najstarszego)</th>
+                </tr>
+                <tr><td style='white-space: nowrap;'><strong>Wt, 15 Gru</strong></td><td><span class='history-badge badge-neutral'><strong>£64</strong> <span class='ts'>(2026-08-24 09:07)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£64</strong> <span class='ts'>(2026-08-24 09:13)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£64</strong> <span class='ts'>(2026-08-24 09:31)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£64</strong> <span class='ts'>(2026-08-24 13:16)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£64</strong> <span class='ts'>(2026-08-24 14:26)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£64</strong> <span class='ts'>(2026-08-24 20:00)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£64</strong> <span class='ts'>(2026-08-25 09:10)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£64</strong> <span class='ts'>(2026-08-25 12:48)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£64</strong> <span class='ts'>(2026-08-25 14:28)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£64</strong> <span class='ts'>(2026-08-25 19:59)</span></span> ➔ <span class='history-badge badge-down'><strong>£61</strong> <small>(↓£3)</small> <span class='ts'>(2026-08-26 09:24)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-08-26 14:27)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-08-27 07:57)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-08-27 18:36)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-08-28 08:48)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-08-28 21:51)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-08-29 09:23)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-08-29 19:22)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-08-30 09:23)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-08-30 19:22)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-08-31 09:23)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-08-31 19:22)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-09-01 09:29)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-09-01 19:25)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-09-02 09:25)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-09-04 09:25)</span></span> ➔ <span class='history-badge badge-down'><strong>£55</strong> <small>(↓£6)</small> <span class='ts'>(2026-09-09 10:39)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£55</strong> <span class='ts'>(2026-09-09 10:51)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£55</strong> <span class='ts'>(2026-09-09 11:10)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£55</strong> <span class='ts'>(2026-09-09 11:24)</span></span></td></tr>
 <tr><td style='white-space: nowrap;'><strong>Śr, 16 Gru</strong></td><td><span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-08-24 09:07)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-08-24 09:13)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-08-24 09:31)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-08-24 13:16)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-08-24 14:26)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-08-24 20:00)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-08-25 09:10)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-08-25 12:48)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-08-25 14:28)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-08-25 19:59)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-08-26 09:24)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-08-26 14:27)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-08-27 07:57)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-08-27 18:36)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-08-28 08:48)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-08-28 21:51)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-08-29 09:23)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-08-29 19:22)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£61</strong> <span class='ts'>(2026-08-30 09:23)</span></span> ➔ <span class='history-badge badge-up'><strong>£64</strong> <small>(↑£3)</small> <span class='ts'>(2026-08-30 19:22)</span></span> ➔ <span class='history-badge badge-down'><strong>£55</strong> <small>(↓£9)</small> <span class='ts'>(2026-08-31 09:23)</span></span> ➔ <span class='history-badge badge-up'><strong>£64</strong> <small>(↑£9)</small> <span class='ts'>(2026-08-31 19:22)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£64</strong> <span class='ts'>(2026-09-01 09:29)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£64</strong> <span class='ts'>(2026-09-01 19:25)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£64</strong> <span class='ts'>(2026-09-02 09:25)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£64</strong> <span class='ts'>(2026-09-04 09:25)</span></span> ➔ <span class='history-badge badge-down'><strong>£55</strong> <small>(↓£9)</small> <span class='ts'>(2026-09-09 10:39)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£55</strong> <span class='ts'>(2026-09-09 10:51)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£55</strong> <span class='ts'>(2026-09-09 11:10)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£55</strong> <span class='ts'>(2026-09-09 11:24)</span></span></td></tr>
 <tr><td style='white-space: nowrap;'><strong>Czw, 17 Gru</strong></td><td><span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-24 09:07)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-24 09:13)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-24 09:31)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-24 13:16)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-24 14:26)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-24 20:00)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-25 09:10)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-25 12:48)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-25 14:28)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-25 19:59)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-26 09:24)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-26 14:27)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-27 07:57)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-27 18:36)</span></span> ➔ <span class='history-badge badge-down'><strong>£106</strong> <small>(↓£9)</small> <span class='ts'>(2026-08-28 08:48)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£106</strong> <span class='ts'>(2026-08-28 21:51)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£106</strong> <span class='ts'>(2026-08-29 09:23)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£106</strong> <span class='ts'>(2026-08-29 19:22)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£106</strong> <span class='ts'>(2026-08-30 09:23)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£106</strong> <span class='ts'>(2026-08-30 19:22)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£106</strong> <span class='ts'>(2026-08-31 09:23)</span></span> ➔ <span class='history-badge badge-down'><strong>£83</strong> <small>(↓£23)</small> <span class='ts'>(2026-08-31 19:22)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£83</strong> <span class='ts'>(2026-09-01 09:29)</span></span> ➔ <span class='history-badge badge-down'><strong>£64</strong> <small>(↓£19)</small> <span class='ts'>(2026-09-01 19:25)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£64</strong> <span class='ts'>(2026-09-02 09:25)</span></span> ➔ <span class='history-badge badge-up'><strong>£73</strong> <small>(↑£9)</small> <span class='ts'>(2026-09-04 09:25)</span></span> ➔ <span class='history-badge badge-up'><strong>£92</strong> <small>(↑£19)</small> <span class='ts'>(2026-09-09 10:39)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£92</strong> <span class='ts'>(2026-09-09 10:51)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£92</strong> <span class='ts'>(2026-09-09 11:10)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£92</strong> <span class='ts'>(2026-09-09 11:24)</span></span></td></tr>
 <tr><td style='white-space: nowrap;'><strong>Pt, 18 Gru</strong></td><td><span class='history-badge badge-neutral'><strong>£106</strong> <span class='ts'>(2026-08-24 09:07)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£106</strong> <span class='ts'>(2026-08-24 09:13)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£106</strong> <span class='ts'>(2026-08-24 09:31)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£106</strong> <span class='ts'>(2026-08-24 13:16)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£106</strong> <span class='ts'>(2026-08-24 14:26)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£106</strong> <span class='ts'>(2026-08-24 20:00)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£106</strong> <span class='ts'>(2026-08-25 09:10)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£106</strong> <span class='ts'>(2026-08-25 12:48)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£106</strong> <span class='ts'>(2026-08-25 14:28)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£106</strong> <span class='ts'>(2026-08-25 19:59)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£106</strong> <span class='ts'>(2026-08-26 09:24)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£106</strong> <span class='ts'>(2026-08-26 14:27)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£106</strong> <span class='ts'>(2026-08-27 07:57)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£106</strong> <span class='ts'>(2026-08-27 18:36)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£106</strong> <span class='ts'>(2026-08-28 08:48)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£106</strong> <span class='ts'>(2026-08-28 21:51)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£106</strong> <span class='ts'>(2026-08-29 09:23)</span></span> ➔ <span class='history-badge badge-up'><strong>£115</strong> <small>(↑£9)</small> <span class='ts'>(2026-08-29 19:22)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-30 09:23)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-30 19:22)</span></span> ➔ <span class='history-badge badge-down'><strong>£106</strong> <small>(↓£9)</small> <span class='ts'>(2026-08-31 09:23)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£106</strong> <span class='ts'>(2026-08-31 19:22)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£106</strong> <span class='ts'>(2026-09-01 09:29)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£106</strong> <span class='ts'>(2026-09-01 19:25)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£106</strong> <span class='ts'>(2026-09-02 09:25)</span></span> ➔ <span class='history-badge badge-up'><strong>£115</strong> <small>(↑£9)</small> <span class='ts'>(2026-09-04 09:25)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-09-09 10:39)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-09-09 10:51)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-09-09 11:10)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-09-09 11:24)</span></span></td></tr>
@@ -155,55 +146,60 @@
 <tr><td style='white-space: nowrap;'><strong>Śr, 23 Gru</strong></td><td><span class='history-badge badge-neutral'><strong>£152</strong> <span class='ts'>(2026-08-24 09:07)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£152</strong> <span class='ts'>(2026-08-24 09:13)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£152</strong> <span class='ts'>(2026-08-24 09:31)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£152</strong> <span class='ts'>(2026-08-24 13:16)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£152</strong> <span class='ts'>(2026-08-24 14:26)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£152</strong> <span class='ts'>(2026-08-24 20:00)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£152</strong> <span class='ts'>(2026-08-25 09:10)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£152</strong> <span class='ts'>(2026-08-25 12:48)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£152</strong> <span class='ts'>(2026-08-25 14:28)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£152</strong> <span class='ts'>(2026-08-25 19:59)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£152</strong> <span class='ts'>(2026-08-26 09:24)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£152</strong> <span class='ts'>(2026-08-26 14:27)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£152</strong> <span class='ts'>(2026-08-27 07:57)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£152</strong> <span class='ts'>(2026-08-27 18:36)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£152</strong> <span class='ts'>(2026-08-28 08:48)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£152</strong> <span class='ts'>(2026-08-28 21:51)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£152</strong> <span class='ts'>(2026-08-29 09:23)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£152</strong> <span class='ts'>(2026-08-29 19:22)</span></span> ➔ <span class='history-badge badge-down'><strong>£142</strong> <small>(↓£10)</small> <span class='ts'>(2026-08-30 09:23)</span></span> ➔ <span class='history-badge badge-up'><strong>£152</strong> <small>(↑£10)</small> <span class='ts'>(2026-08-30 19:22)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£152</strong> <span class='ts'>(2026-08-31 09:23)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£152</strong> <span class='ts'>(2026-08-31 19:22)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£152</strong> <span class='ts'>(2026-09-01 09:29)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£152</strong> <span class='ts'>(2026-09-01 19:25)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£152</strong> <span class='ts'>(2026-09-02 09:25)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£152</strong> <span class='ts'>(2026-09-04 09:25)</span></span> ➔ <span class='history-badge badge-down'><strong>£142</strong> <small>(↓£10)</small> <span class='ts'>(2026-09-09 10:39)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£142</strong> <span class='ts'>(2026-09-09 10:51)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£142</strong> <span class='ts'>(2026-09-09 11:10)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£142</strong> <span class='ts'>(2026-09-09 11:24)</span></span></td></tr>
 <tr><td style='white-space: nowrap;'><strong>Czw, 24 Gru</strong></td><td><span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-24 09:07)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-24 09:13)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-24 09:31)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-24 13:16)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-24 14:26)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-24 20:00)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-25 09:10)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-25 12:48)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-25 14:28)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-25 19:59)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-26 09:24)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-26 14:27)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-27 07:57)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-27 18:36)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-28 08:48)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-28 21:51)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-29 09:23)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-29 19:22)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£115</strong> <span class='ts'>(2026-08-30 09:23)</span></span> ➔ <span class='history-badge badge-up'><strong>£124</strong> <small>(↑£9)</small> <span class='ts'>(2026-08-30 19:22)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£124</strong> <span class='ts'>(2026-08-31 09:23)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£124</strong> <span class='ts'>(2026-08-31 19:22)</span></span> ➔ <span class='history-badge badge-up'><strong>£166</strong> <small>(↑£42)</small> <span class='ts'>(2026-09-01 09:29)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£166</strong> <span class='ts'>(2026-09-01 19:25)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£166</strong> <span class='ts'>(2026-09-02 09:25)</span></span> ➔ <span class='history-badge badge-down'><strong>£152</strong> <small>(↓£14)</small> <span class='ts'>(2026-09-04 09:25)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£152</strong> <span class='ts'>(2026-09-09 10:39)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£152</strong> <span class='ts'>(2026-09-09 10:51)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£152</strong> <span class='ts'>(2026-09-09 11:10)</span></span> ➔ <span class='history-badge badge-neutral'><strong>£152</strong> <span class='ts'>(2026-09-09 11:24)</span></span></td></tr>
 
-                    </tbody>
-                </table>
-            </div>
+            </table>
         </div>
     </div>
+    
+    <div class="footer">
+        Coded by Jakub Wulczyński | Wizz-Fly-Hunter 2026
+    </div>
+</div>
 
-    <script>
-        const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-        const textColor = isDark ? '#94a3b8' : '#64748b';
-        const gridColor = isDark ? '#334155' : '#e2e8f0';
-
-        // Wykres Słupkowy
-        new Chart(document.getElementById('barChart').getContext('2d'), {
-            type: 'bar',
-            data: {
-                labels: ["Wt, 15 Gru", "\u015ar, 16 Gru", "Czw, 17 Gru", "Pt, 18 Gru", "Sob, 19 Gru", "Niedz, 20 Gru", "Pon, 21 Gru", "Wt, 22 Gru", "\u015ar, 23 Gru", "Czw, 24 Gru"],
-                datasets: [{
-                    label: 'Aktualna cena (£)',
-                    data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                    backgroundColor: '#38bdf8',
-                    borderRadius: 6
-                }]
+<script>
+    const chartData = {"labels": ["2026-08-24 09:07", "2026-08-24 09:13", "2026-08-24 09:31", "2026-08-24 13:16", "2026-08-24 14:26", "2026-08-24 20:00", "2026-08-25 09:10", "2026-08-25 12:48", "2026-08-25 14:28", "2026-08-25 19:59", "2026-08-26 09:24", "2026-08-26 14:27", "2026-08-27 07:57", "2026-08-27 18:36", "2026-08-28 08:48", "2026-08-28 21:51", "2026-08-29 09:23", "2026-08-29 19:22", "2026-08-30 09:23", "2026-08-30 19:22", "2026-08-31 09:23", "2026-08-31 19:22", "2026-09-01 09:29", "2026-09-01 19:25", "2026-09-02 09:25", "2026-09-04 09:25", "2026-09-09 10:39", "2026-09-09 10:51", "2026-09-09 11:10", "2026-09-09 11:24"], "datasets": [{"label": "Wt, 15 Gru", "data": [64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 55, 55, 55, 55], "borderColor": "#3b82f6", "backgroundColor": "#3b82f6", "fill": false, "tension": 0.2}, {"label": "\u015ar, 16 Gru", "data": [61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 64, 55, 64, 64, 64, 64, 64, 55, 55, 55, 55], "borderColor": "#10b981", "backgroundColor": "#10b981", "fill": false, "tension": 0.2}, {"label": "Czw, 17 Gru", "data": [115, 115, 115, 115, 115, 115, 115, 115, 115, 115, 115, 115, 115, 115, 106, 106, 106, 106, 106, 106, 106, 83, 83, 64, 64, 73, 92, 92, 92, 92], "borderColor": "#ef4444", "backgroundColor": "#ef4444", "fill": false, "tension": 0.2}, {"label": "Pt, 18 Gru", "data": [106, 106, 106, 106, 106, 106, 106, 106, 106, 106, 106, 106, 106, 106, 106, 106, 106, 115, 115, 115, 106, 106, 106, 106, 106, 115, 115, 115, 115, 115], "borderColor": "#f59e0b", "backgroundColor": "#f59e0b", "fill": false, "tension": 0.2}, {"label": "Sob, 19 Gru", "data": [142, 142, 142, 142, 142, 142, 142, 142, 142, 152, 142, 142, 142, 142, 142, 152, 152, 152, 152, 152, 152, 180, 180, 180, 180, 166, 166, 166, 166, 166], "borderColor": "#8b5cf6", "backgroundColor": "#8b5cf6", "fill": false, "tension": 0.2}, {"label": "Niedz, 20 Gru", "data": [124, 124, 124, 124, 124, 124, 124, 124, 124, 124, 124, 124, 124, 124, 124, 124, 124, 124, 124, 124, 115, 115, 115, 115, 115, 115, 115, 115, 115, 115], "borderColor": "#06b6d4", "backgroundColor": "#06b6d4", "fill": false, "tension": 0.2}, {"label": "Pon, 21 Gru", "data": [115, 115, 115, 115, 115, 115, 115, 115, 115, 115, 106, 106, 106, 106, 115, 115, 133, 133, 133, 133, 133, 133, 133, 133, 133, 133, 124, 124, 124, 124], "borderColor": "#ec4899", "backgroundColor": "#ec4899", "fill": false, "tension": 0.2}, {"label": "Wt, 22 Gru", "data": [142, 142, 142, 142, 142, 142, 142, 142, 142, 142, 142, 142, 152, 152, 152, 142, 142, 142, 142, 142, 142, 142, 142, 142, 142, 142, 133, 133, 133, 133], "borderColor": "#6b7280", "backgroundColor": "#6b7280", "fill": false, "tension": 0.2}, {"label": "\u015ar, 23 Gru", "data": [152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 142, 152, 152, 152, 152, 152, 152, 152, 142, 142, 142, 142], "borderColor": "#14b8a6", "backgroundColor": "#14b8a6", "fill": false, "tension": 0.2}, {"label": "Czw, 24 Gru", "data": [115, 115, 115, 115, 115, 115, 115, 115, 115, 115, 115, 115, 115, 115, 115, 115, 115, 115, 115, 124, 124, 124, 166, 166, 166, 152, 152, 152, 152, 152], "borderColor": "#eab308", "backgroundColor": "#eab308", "fill": false, "tension": 0.2}]};
+    
+    const ctx = document.getElementById('trendChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: chartData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { position: 'right', labels: { color: getComputedStyle(document.body).getPropertyValue('--text-color') } }
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    y: { grid: { color: gridColor }, ticks: { color: textColor } },
-                    x: { grid: { display: false }, ticks: { color: textColor } }
-                }
+            scales: {
+                x: { ticks: { color: '#94a3b8', maxRotation: 45, minRotation: 45 } },
+                y: { title: { display: true, text: 'Cena w GBP (£)' }, ticks: { color: '#94a3b8' } }
             }
-        });
+        }
+    });
 
-        // Wykres Liniowy
-        const lineData = {"labels": ["2026-08-24 09:07", "2026-08-24 09:13", "2026-08-24 09:31", "2026-08-24 13:16", "2026-08-24 14:26", "2026-08-24 20:00", "2026-08-25 09:10", "2026-08-25 12:48", "2026-08-25 14:28", "2026-08-25 19:59", "2026-08-26 09:24", "2026-08-26 14:27", "2026-08-27 07:57", "2026-08-27 18:36", "2026-08-28 08:48", "2026-08-28 21:51", "2026-08-29 09:23", "2026-08-29 19:22", "2026-08-30 09:23", "2026-08-30 19:22", "2026-08-31 09:23", "2026-08-31 19:22", "2026-09-01 09:29", "2026-09-01 19:25", "2026-09-02 09:25", "2026-09-04 09:25", "2026-09-09 10:39", "2026-09-09 10:51", "2026-09-09 11:10", "2026-09-09 11:24"], "datasets": [{"label": "Wt, 15 Gru", "data": [64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 55, 55, 55, 55], "borderColor": "#3b82f6", "backgroundColor": "#3b82f6", "fill": false, "tension": 0.2}, {"label": "\u015ar, 16 Gru", "data": [61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 61, 64, 55, 64, 64, 64, 64, 64, 55, 55, 55, 55], "borderColor": "#10b981", "backgroundColor": "#10b981", "fill": false, "tension": 0.2}, {"label": "Czw, 17 Gru", "data": [115, 115, 115, 115, 115, 115, 115, 115, 115, 115, 115, 115, 115, 115, 106, 106, 106, 106, 106, 106, 106, 83, 83, 64, 64, 73, 92, 92, 92, 92], "borderColor": "#ef4444", "backgroundColor": "#ef4444", "fill": false, "tension": 0.2}, {"label": "Pt, 18 Gru", "data": [106, 106, 106, 106, 106, 106, 106, 106, 106, 106, 106, 106, 106, 106, 106, 106, 106, 115, 115, 115, 106, 106, 106, 106, 106, 115, 115, 115, 115, 115], "borderColor": "#f59e0b", "backgroundColor": "#f59e0b", "fill": false, "tension": 0.2}, {"label": "Sob, 19 Gru", "data": [142, 142, 142, 142, 142, 142, 142, 142, 142, 152, 142, 142, 142, 142, 142, 152, 152, 152, 152, 152, 152, 180, 180, 180, 180, 166, 166, 166, 166, 166], "borderColor": "#8b5cf6", "backgroundColor": "#8b5cf6", "fill": false, "tension": 0.2}, {"label": "Niedz, 20 Gru", "data": [124, 124, 124, 124, 124, 124, 124, 124, 124, 124, 124, 124, 124, 124, 124, 124, 124, 124, 124, 124, 115, 115, 115, 115, 115, 115, 115, 115, 115, 115], "borderColor": "#06b6d4", "backgroundColor": "#06b6d4", "fill": false, "tension": 0.2}, {"label": "Pon, 21 Gru", "data": [115, 115, 115, 115, 115, 115, 115, 115, 115, 115, 106, 106, 106, 106, 115, 115, 133, 133, 133, 133, 133, 133, 133, 133, 133, 133, 124, 124, 124, 124], "borderColor": "#ec4899", "backgroundColor": "#ec4899", "fill": false, "tension": 0.2}, {"label": "Wt, 22 Gru", "data": [142, 142, 142, 142, 142, 142, 142, 142, 142, 142, 142, 142, 152, 152, 152, 142, 142, 142, 142, 142, 142, 142, 142, 142, 142, 142, 133, 133, 133, 133], "borderColor": "#6b7280", "backgroundColor": "#6b7280", "fill": false, "tension": 0.2}, {"label": "\u015ar, 23 Gru", "data": [152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 142, 152, 152, 152, 152, 152, 152, 152, 142, 142, 142, 142], "borderColor": "#14b8a6", "backgroundColor": "#14b8a6", "fill": false, "tension": 0.2}, {"label": "Czw, 24 Gru", "data": [115, 115, 115, 115, 115, 115, 115, 115, 115, 115, 115, 115, 115, 115, 115, 115, 115, 115, 115, 124, 124, 124, 166, 166, 166, 152, 152, 152, 152, 152], "borderColor": "#eab308", "backgroundColor": "#eab308", "fill": false, "tension": 0.2}]};
-        new Chart(document.getElementById('lineChart').getContext('2d'), {
-            type: 'line',
-            data: lineData,
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { position: 'bottom', labels: { color: textColor } } },
-                scales: {
-                    y: { grid: { color: gridColor }, ticks: { color: textColor } },
-                    x: { grid: { color: gridColor }, ticks: { color: textColor } }
-                }
+    const barCtx = document.getElementById('barChart').getContext('2d');
+    new Chart(barCtx, {
+        type: 'bar',
+        data: {
+            labels: ["Wt, 15 Gru", "\u015ar, 16 Gru", "Czw, 17 Gru", "Pt, 18 Gru", "Sob, 19 Gru", "Niedz, 20 Gru", "Pon, 21 Gru", "Wt, 22 Gru", "\u015ar, 23 Gru", "Czw, 24 Gru"],
+            datasets: [{
+                label: 'Obecna cena (£)',
+                data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                backgroundColor: 'rgba(56, 189, 248, 0.6)',
+                borderColor: '#38bdf8',
+                borderWidth: 1,
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { ticks: { color: '#94a3b8' } },
+                y: { ticks: { color: '#94a3b8' } }
             }
-        });
-    </script>
+        }
+    });
+</script>
 </body>
 </html>
